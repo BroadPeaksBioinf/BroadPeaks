@@ -132,15 +132,19 @@ def makeIslandsList(windowList, lambdaa, windowSize,l0, chromosomesInfo,islandSc
             if windowStartNew != windowStart + windowSize:
                 # A bug here: loads of 0-score islands are generated
                 if islandScore>=islandScoreThreshold:
-                    islandsList.append([currentChromosomeName,islandStart, windowStart+ windowSize, (islandScore)])
+                    islandsList.append([currentChromosomeName,islandStart, windowStart+ windowSize, int(islandScore)])
                 islandScore = 0
                 islandStart = window[0]
                 windowStart = windowStartNew
             else:
                 # Check eligibility
                 if window[1]>=l0:
-                    windowScore = -numpy.log(scipy.stats.poisson.pmf(window[1],lambdaa))
-
+                    #sometimes 0 and therefore inf in -log  is generated
+                    temp = scipy.stats.poisson.pmf(window[1],lambdaa)
+                    if temp == 0:
+                        windowScore = 10
+                    else:
+                        windowScore = -numpy.log(temp)
                 else:
                     windowScore = 0
                 islandScore = islandScore + windowScore
@@ -153,15 +157,15 @@ def makeIslandsList(windowList, lambdaa, windowSize,l0, chromosomesInfo,islandSc
 startTime = time.time()
 
 # Input arguments: path to BAM file
-bamPath = sys.argv[1]
-windowSize = sys.argv[2]
-gap = sys.argv[3]
-gap = int(float(gap)/float(windowSize))
+#bamPath = sys.argv[1]
+#windowSize = sys.argv[2]
+#gap = sys.argv[3]
+#gap = int(float(gap)/float(windowSize))
 #bamPath = "/home/dima/BAMfiles/Bernstein_H1_hESC_CTCF.bam"
-#bamPath = "/home/dima/BAMfiles/h3k4me3_rep1.bam"
-#windowSize = 200
+bamPath = "/home/dima/BAMfiles/h3k4me3_rep1.bam"
+windowSize = 200
 p0 = 0.05
-#gap = 1
+gap = 1
 islandScoreThreshold = 100
 
 # Log file
