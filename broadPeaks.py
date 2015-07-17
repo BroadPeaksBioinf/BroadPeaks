@@ -1,4 +1,4 @@
-__author__ = 'dima'
+#!/usr/bin/env/ python
 
 import sys
 import numpy
@@ -10,202 +10,207 @@ import scipy
 import scipy.stats
 
 
-
-def inputAndIndex(bamPath):
+def input_and_index(bam_path):
     # Check if there is an BAM file at entered dir
-    if os.path.isfile(bamPath) == False:
+    if not os.path.isfile(bam_path):
         logging.error("BAM file does not exist")
 
     # Check if there is an index file, create one if there isn't
-    if os.path.isfile(bamPath+".bai") == False:
-        pysam.index(bamPath)
+    if not os.path.isfile(bam_path+".bai"):
+        pysam.index(bam_path)
         logging.info('No index was found, new index was generated')
 
-    # Take chromosome data from BAM index (ref.seq. name, ref.seq. length, number of mapped reads and number of unmapped reads)
-    chromosomesInfo = []
-    for chr in pysam.idxstats(bamPath):
-        chromosomesInfo.append(chr.split("\t"))
+    # Take chromosome data from BAM index:
+    # (ref.seq. name, ref.seq. length, number of mapped reads and number of unmapped reads)
+    chromosomes_info = []
+    for chr in pysam.idxstats(bam_path):
+        chromosomes_info.append(chr.split("\t"))
     # Last line is unmapped reads, we don't need them
-    chromosomesInfo.pop()
-    #print(chromosomesInfo)
+    chromosomes_info.pop()
+    # print(chromosomes_info)
 
-    bamfile = pysam.AlignmentFile(bamPath, "rb")
+    bamfile = pysam.AlignmentFile(bam_path, "rb")
 
-    return (bamfile, chromosomesInfo)
+    return (bamfile, chromosomes_info)
 
-def countUniqueReads(bamfile, chromosomesInfo):
+"""
+This code repeats, maybe function like this may help.
 
-    totalUniqueReadsCount = 0
-    i = 0
-    for chromosome in chromosomesInfo:
+def yield_allReadsInChromosome(chromosomes_info):
+    for chromosome in chromosomes_info:
         beginningOfThePreviousRead = 0
         currentChromosomeName = chromosome[0]
-        currentChromosomeSize = int(chromosome[1])
+        # currentChromosomeSize = int(chromosome[1])
         allReadsInChromosome = bamfile.fetch(currentChromosomeName)
-
-        i = 0
-
-        for read in allReadsInChromosome:
-                readStr = str(read)
-                beginningOfTheRead = ([int(s) for s in readStr.split() if s.isdigit()][2])
-                if beginningOfTheRead != beginningOfThePreviousRead:
-                    beginningOfThePreviousRead = beginningOfTheRead
-                    totalUniqueReadsCount = totalUniqueReadsCount +1
+        yield allReadsInChromosome
+"""
 
 
-
-
-    #print("Unique reads counted")
-
-    return(totalUniqueReadsCount)
+def count_unique_reads(bamfile, chromosomes_info):
+    total_unique_reads_count = 0
+    for chromosome in chromosomes_info:
+        beginning_of_the_previous_read = 0
+        current_chromosome_name = chromosome[0]
+        # currentChromosomeSize = int(chromosome[1])
+        all_reads_in_chromosome = bamfile.fetch(current_chromosome_name)
+        for read in all_reads_in_chromosome:
+                read_str = str(read)
+                beginning_of_the_read = ([int(s) for s in read_str.split() if s.isdigit()][2])
+                if beginning_of_the_read != beginning_of_the_previous_read:
+                    beginning_of_the_previous_read = beginning_of_the_read
+                    total_unique_reads_count += 1
+    # print("Unique reads counted")
+    return total_unique_reads_count
 
 # Makes a simple list of windows, where each window is a list [WindowStart, ReadsInWindow].
 # Chromosomes are separated by [-1,-1] window
-# Sequences of ineligible windows loger than gap+1 are not stored
-def makeWindowsList(bamfile, chromosomesInfo,l0, windowSize, gap):
-    i = 0
-    windowList = []
-    for chromosome in chromosomesInfo:
-        beginningOfThePreviousRead = 0
-        currentChromosomeName = chromosome[0]
-        currentChromosomeSize = int(chromosome[1])
-        #print([currentChromosomeName, currentChromosomeSize, len(windowList)])
-        allReadsInChromosome = bamfile.fetch(currentChromosomeName)
+# Sequences of ineligible windows longer than GAP+1 are not stored
 
-        gapCount = 0
+
+def make_windows_list(bamfile, chromosomes_info, l0, window_size, gap):
+    window_list = []
+    for chromosome in chromosomes_info:
+        beginning_of_the_previous_read = 0
+        current_chromosome_name = chromosome[0]
+        current_chromosome_size = int(chromosome[1])
+        # print([current_chromosome_name, current_chromosome_size, len(window_list)])
+        all_reads_in_chromosome = bamfile.fetch(current_chromosome_name)
+
+        gap_count = 0
         i = 0
-        windowReadsCount = 0
-        for read in allReadsInChromosome:
-                readStr = str(read)
-                beginningOfTheRead = ([int(s) for s in readStr.split() if s.isdigit()][2])
-                if beginningOfTheRead != beginningOfThePreviousRead:
-                    beginningOfThePreviousRead = beginningOfTheRead
-
+        window_reads_count = 0
+        for read in all_reads_in_chromosome:
+                read_str = str(read)
+                beginning_of_the_read = ([int(s) for s in read_str.split() if s.isdigit()][2])
+                if beginning_of_the_read != beginning_of_the_previous_read:
+                    beginning_of_the_previous_read = beginning_of_the_read
                     # Ground state: gapCount<=gap
-                    gapFlag = 1
+                    gap_flag = 1
                     while True:
-                        if (i <= beginningOfTheRead) and (beginningOfTheRead < i + windowSize):
-                            windowReadsCount = windowReadsCount + 1
+                        # condition seems to be equal, but not
+                        # if i < i + window_size
+                        if i <= beginning_of_the_read and beginning_of_the_read < i + window_size:
+                            window_reads_count += 1
                             break
-                        elif ( beginningOfTheRead < i):
+                        elif beginning_of_the_read < i:
                             break
-
                         else:
-
-                            if windowReadsCount< l0:
-                                gapCount = gapCount + 1
+                            if window_reads_count < l0:
+                                gap_count += 1
                             else:
-                                gapFlag = 0
-
-                            windowList.append([i, windowReadsCount])
-                            # If we have a g+1 sized gap, go and delete last g+1 windows
-                            if ((gapCount > gap) or (gapFlag == 1)):
-                                gapFlag = 1
-                                while gapCount>0:
-                                    windowList.pop()
-                                    gapCount = gapCount-1
-                            i = i + windowSize
-                            windowReadsCount = 0
+                                gap_flag = 0
+                            window_list.append([i, window_reads_count])
+                            # If we have a g+1 sized GAP, go and delete last g windows
+                            if gap_count > gap or gap_flag == 1:
+                                gap_flag = 1
+                                while gap_count > 0:
+                                    window_list.pop()
+                                    gap_count -= 1
+                            i += window_size
+                            window_reads_count = 0
 
         # Next chromosome marker just in case
-        windowList.append([-1,-1])
-        print([currentChromosomeName, currentChromosomeSize, len(windowList)], "READY")
-    windowList.append([1,1])
-    return(windowList)
+        window_list.append([-1, -1])
+        print([current_chromosome_name, current_chromosome_size, len(window_list)], "READY")
+    window_list.append([1, 1])
+    return window_list
 
-def makeIslandsList(windowList, lambdaa, windowSize,l0, chromosomesInfo,islandScoreThreshold):
 
-    chromosomeCounter = 0
-    currentChromosomeName = chromosomesInfo[chromosomeCounter][0]
-    islandsList = []
-    islandScore = 0
-    windowStart = windowList[0][0] - windowSize
-    islandStart = windowList[0][0]
+def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, island_score_threshold):
 
-    for i, window in enumerate(windowList):
-        windowStartNew = window[0]
+    chromosome_counter = 0
+    current_chromosome_name = chromosomes_info[chromosome_counter][0]
+    islands_list = []
+    island_score = 0
+    window_start = window_list[0][0] - window_size
+    island_start = window_list[0][0]
 
-        #New chromosome check
+    for i, window in enumerate(window_list):
+        window_start_new = window[0]
+
+        # New chromosome check
         if window[0] == -1:
-            print (currentChromosomeName + " done")
+            print (current_chromosome_name + " done")
 
-            windowStart = windowList[i+1][0] - windowSize
+            window_start = window_list[i+1][0] - window_size
+            chromosome_counter += 1
 
-            chromosomeCounter = chromosomeCounter +1
-            if chromosomeCounter<len(chromosomesInfo):
-                currentChromosomeName = chromosomesInfo[chromosomeCounter][0]
-            #print ("start " + currentChromosomeName)
+            if chromosome_counter < len(chromosomes_info):
+                current_chromosome_name = chromosomes_info[chromosome_counter][0]
+            # print ("start " + current_chromosome_name)
         else:
-
-            if windowStartNew != windowStart + windowSize:
+            if window_start_new != window_start + window_size:
                 # A bug here: loads of 0-score islands are generated
-                if islandScore>=islandScoreThreshold:
-                    islandsList.append([currentChromosomeName,islandStart, windowStart+ windowSize, int(islandScore)])
-                islandScore = 0
-                islandStart = window[0]
-                windowStart = windowStartNew
+                if island_score >= island_score_threshold:
+                    islands_list.append([current_chromosome_name, island_start,
+                                         window_start + window_size, int(island_score)])
+                island_score = 0
+                island_start = window[0]
+                window_start = window_start_new
             else:
                 # Check eligibility
-                if window[1]>=l0:
-                    #sometimes 0 and therefore inf in -log  is generated
-                    temp = scipy.stats.poisson.pmf(window[1],lambdaa)
+                if window[1] >= l0:
+                    # sometimes 0 and therefore inf in -log  is generated
+                    temp = scipy.stats.poisson.pmf(window[1], lambdaa)
                     if temp == 0:
-                        windowScore = 10
+                        window_score = 10
                     else:
-                        windowScore = -numpy.log(temp)
+                        window_score = -numpy.log(temp)
                 else:
-                    windowScore = 0
-                islandScore = islandScore + windowScore
+                    window_score = 0
+                island_score = island_score + window_score
 
-                windowStart = windowStartNew
+                window_start = window_start_new
 
-    return(islandsList)
+    return islands_list
 
 
 startTime = time.time()
 
 # Input arguments: path to BAM file
-#bamPath = sys.argv[1]
-#windowSize = sys.argv[2]
-#gap = sys.argv[3]
-#gap = int(float(gap)/float(windowSize))
-#bamPath = "/home/dima/BAMfiles/Bernstein_H1_hESC_CTCF.bam"
-bamPath = "/home/dima/BAMfiles/h3k4me3_rep1.bam"
-windowSize = 200
+# bamPath = sys.argv[1]
+# WINDOW_SIZE = sys.argv[2]
+# GAP = sys.argv[3]
+# GAP = int(float(GAP)/float(WINDOW_SIZE))
+# bamPath = "/home/dima/BAMfiles/Bernstein_H1_hESC_CTCF.bam"
+# "/home/dima/BAMfiles/h3k4me3_rep1.bam"
+bamPath = "/home/yegor/Alex_project/H3K4me3.bam"
+WINDOW_SIZE = 200
 p0 = 0.01
-gap = 1
-islandScoreThreshold = 100
+GAP = 1
+ISLAND_SCORE_THRESHOLD = 100
 
 # Log file
-logging.basicConfig(filename=(os.path.dirname(bamPath) + '/SICER_log.log'),level=logging.DEBUG)
+logging.basicConfig(filename=(os.path.dirname(bamPath) + '/SICER_log.log'), level=logging.DEBUG)
 
-bamfile, chromosomesInfo = inputAndIndex(bamPath)
+bamfile, chromosomes_info = input_and_index(bamPath)
 print("Counting unique reads")
-totalUniqueReadsCount = countUniqueReads(bamfile, chromosomesInfo)
+totalUniqueReadsCount = count_unique_reads(bamfile, chromosomes_info)
 
 # Effective genome length
-L = 0.77 * sum(int(row[1]) for row in chromosomesInfo)
+L = 0.77 * sum(int(row[1]) for row in chromosomes_info)
 # Lambda for poisson dist
-lambdaa = float(windowSize) * float(totalUniqueReadsCount)/ float(L)
+lambdaa = float(WINDOW_SIZE) * float(totalUniqueReadsCount) / float(L)
 # Minimum #reads in a window for eligibility
 # Formula (1), finding l0
-l0 = scipy.stats.poisson.ppf(1-p0,lambdaa)
-#print(L, totalUniqueReadsCount, lambdaa, l0)
+l0 = scipy.stats.poisson.ppf(1 - p0, lambdaa)
+# print(L, totalUniqueReadsCount, lambdaa, l0)
 
 
 print("Finished counting reads, now making window list")
-windowList = makeWindowsList(bamfile, chromosomesInfo, l0, windowSize, gap)
+windowList = make_windows_list(bamfile, chromosomes_info, l0, WINDOW_SIZE, GAP)
 print("Finished window list, now making island list")
-islandList = makeIslandsList(windowList, lambdaa, windowSize,l0, chromosomesInfo,islandScoreThreshold)
+islandList = make_islands_list(windowList, lambdaa, WINDOW_SIZE, l0, chromosomes_info,
+                               ISLAND_SCORE_THRESHOLD)
 
-#print(len(windowList), sys.getsizeof(windowList)/1024)
-#print(len(islandList), sys.getsizeof(islandList)/1024)
+# print(len(windowList), sys.getsizeof(windowList)/1024)
+# print(len(islandList), sys.getsizeof(islandList)/1024)
 
-f = open(bamPath[:-4] +'_peaks.bed', 'wb')
+f = open(bamPath[:-4] + '_peaks.bed', 'wb')
 for island in islandList:
     islandString = str(island[0]) + "\t" + str(island[1]) + "\t" + str(island[2]) + "\n"
     f.write(islandString)
-#print(islandList[11104])
+# print(islandList[11104])
 
 bamfile.close()
 
