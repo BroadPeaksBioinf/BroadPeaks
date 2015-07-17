@@ -37,13 +37,13 @@ def input_and_index(bam_path):
 """
 This code repeats, maybe function like this may help.
 
-def yield_allReadsInChromosome(chromosomes_info):
-    for chromosome in chromosomes_info:
-        beginningOfThePreviousRead = 0
-        currentChromosomeName = chromosome[0]
+def yield_all_reads_in_chromosome(chromosomes_info):
+     for chromosome in chromosomes_info:
+        beginning_of_the_previous_read = 0
+        current_chromosome_name = chromosome[0]
         # currentChromosomeSize = int(chromosome[1])
-        allReadsInChromosome = bamfile.fetch(currentChromosomeName)
-        yield allReadsInChromosome
+        all_reads_in_chromosome = bamfile.fetch(current_chromosome_name)
+        yield all_reads_in_chromosome
 """
 
 
