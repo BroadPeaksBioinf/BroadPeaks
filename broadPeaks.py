@@ -89,7 +89,7 @@ def make_windows_list(bamfile, chromosomes_info, l0, window_size, gap):
             beginning_of_the_read = ([int(s) for s in read_str.split() if s.isdigit()][2])
             if beginning_of_the_read != beginning_of_the_previous_read:
                 beginning_of_the_previous_read = beginning_of_the_read
-                # Ground state: gapCount<=gap
+                # Ground state: gap_count <= gap
                 gap_flag = 1
                 while True:
                     # condition seems to be equal, but not
@@ -131,9 +131,11 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
 
     for i, window in enumerate(window_list):
         window_start_new = window[0]
+        # what is window[1]?
+        number_of_reads = window[1]
 
         # New chromosome check
-        if window[0] == -1:
+        if window_start_new == -1:
             print (current_chromosome_name + " done")
 
             window_start = window_list[i + 1][0] - window_size
@@ -149,13 +151,12 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
                     islands_list.append([current_chromosome_name, island_start,
                                          window_start + window_size, int(island_score)])
                 island_score = 0
-                island_start = window[0]
-                window_start = window_start_new
+                island_start = window_start_new
             else:
                 # Check eligibility
-                if window[1] >= l0:
+                if number_of_reads >= l0:
                     # sometimes 0 and therefore inf in -log  is generated
-                    temp = scipy.stats.poisson.pmf(window[1], lambdaa)
+                    temp = scipy.stats.poisson.pmf(number_of_reads, lambdaa)
                     if temp == 0:
                         window_score = 10
                     else:
@@ -163,8 +164,7 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
                 else:
                     window_score = 0
                 island_score = island_score + window_score
-
-                window_start = window_start_new
+            window_start = window_start_new
 
     return islands_list
 
