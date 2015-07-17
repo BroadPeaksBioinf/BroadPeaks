@@ -1,4 +1,4 @@
-__author__ = 'dima'
+#!/usr/bin/env/ python
 
 import sys
 import numpy
