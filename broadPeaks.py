@@ -1,4 +1,4 @@
-#!/usr/bin/env/ python
+__author__ = 'dima'
 
 import sys
 import numpy
@@ -13,11 +13,11 @@ import scipy.stats
 
 def inputAndIndex(bamPath):
     # Check if there is an BAM file at entered dir
-    if not os.path.isfile(bamPath):
+    if os.path.isfile(bamPath) == False:
         logging.error("BAM file does not exist")
 
     # Check if there is an index file, create one if there isn't
-    if not os.path.isfile(bamPath+".bai"):
+    if os.path.isfile(bamPath+".bai") == False:
         pysam.index(bamPath)
         logging.info('No index was found, new index was generated')
 
@@ -81,18 +81,26 @@ def makeWindowsList(bamfile, chromosomesInfo,l0, windowSize, gap):
                 if beginningOfTheRead != beginningOfThePreviousRead:
                     beginningOfThePreviousRead = beginningOfTheRead
 
+                    # Ground state: gapCount<=gap
+                    gapFlag = 1
                     while True:
                         if (i <= beginningOfTheRead) and (beginningOfTheRead < i + windowSize):
                             windowReadsCount = windowReadsCount + 1
                             break
                         elif ( beginningOfTheRead < i):
                             break
+
                         else:
+
                             if windowReadsCount< l0:
                                 gapCount = gapCount + 1
+                            else:
+                                gapFlag = 0
+
                             windowList.append([i, windowReadsCount])
-                            # If we have a g+1 sized gap, go and delete last g windows
-                            if gapCount > gap:
+                            # If we have a g+1 sized gap, go and delete last g+1 windows
+                            if ((gapCount > gap) or (gapFlag == 1)):
+                                gapFlag = 1
                                 while gapCount>0:
                                     windowList.pop()
                                     gapCount = gapCount-1
@@ -164,7 +172,7 @@ startTime = time.time()
 #bamPath = "/home/dima/BAMfiles/Bernstein_H1_hESC_CTCF.bam"
 bamPath = "/home/dima/BAMfiles/h3k4me3_rep1.bam"
 windowSize = 200
-p0 = 0.05
+p0 = 0.01
 gap = 1
 islandScoreThreshold = 100
 
