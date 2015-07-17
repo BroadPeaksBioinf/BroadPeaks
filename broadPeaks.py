@@ -62,6 +62,9 @@ def count_unique_reads(bamfile, chromosomes_info):
                 total_unique_reads_count += 1
     # print("Unique reads counted")
     return total_unique_reads_count
+    # normalising_coefficient = total_unique_reads_count / 1000000
+    # it can help to calculate experiments with "control"
+    # read_coverage has to be multiplied on normalising_coefficient
 
 
 # Makes a simple list of windows, where each window is a list [WindowStart, ReadsInWindow].
