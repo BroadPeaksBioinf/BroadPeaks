@@ -13,11 +13,11 @@ import scipy.stats
 
 def inputAndIndex(bamPath):
     # Check if there is an BAM file at entered dir
-    if os.path.isfile(bamPath) == False:
+    if not os.path.isfile(bamPath):
         logging.error("BAM file does not exist")
 
     # Check if there is an index file, create one if there isn't
-    if os.path.isfile(bamPath+".bai") == False:
+    if not os.path.isfile(bamPath+".bai"):
         pysam.index(bamPath)
         logging.info('No index was found, new index was generated')
 
