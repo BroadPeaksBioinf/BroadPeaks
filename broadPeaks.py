@@ -130,6 +130,7 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
     island_start = window_list[0][0]
 
     for i, window in enumerate(window_list):
+        # i == # in list, window == [window_start_position, number_of_reads_per_window]
         window_start_new = window[0]
         # what is window[1]?
         number_of_reads = window[1]
@@ -137,7 +138,7 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
         # New chromosome check
         if window_start_new == -1:
             print (current_chromosome_name + " done")
-
+            # move to the next-previous? window
             window_start = window_list[i + 1][0] - window_size
             chromosome_counter += 1
 
