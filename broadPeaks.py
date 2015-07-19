@@ -8,6 +8,7 @@ import os.path
 import time
 import scipy
 import scipy.stats
+import argparse
 
 
 def input_and_index(bam_path):
@@ -69,7 +70,7 @@ def count_unique_reads(bamfile, chromosomes_info):
 
 # Makes a simple list of windows, where each window is a list [WindowStart, ReadsInWindow].
 # Chromosomes are separated by [-1,-1] window
-# Sequences of ineligible windows longer than GAP+1 are not stored
+# Sequences of ineligible windows longer than gap+1 are not stored
 
 
 def make_windows_list(bamfile, chromosomes_info, l0, window_size, gap):
@@ -105,7 +106,7 @@ def make_windows_list(bamfile, chromosomes_info, l0, window_size, gap):
                         else:
                             gap_flag = 0
                         window_list.append([i, window_reads_count])
-                        # If we have a g+1 sized GAP, go and delete last g windows
+                        # If we have a g+1 sized gap, go and delete last g windows
                         if gap_count > gap or gap_flag == 1:
                             gap_flag = 1
                             while gap_count > 0:
@@ -172,18 +173,43 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
 
 startTime = time.time()
 
-# Input arguments: path to BAM file
-# bamPath = sys.argv[1]
-# WINDOW_SIZE = sys.argv[2]
-# GAP = sys.argv[3]
-# GAP = int(float(GAP)/float(WINDOW_SIZE))
+parser = argparse.ArgumentParser(description="Tool for ChiP-seq analysis to find broad peaks")
+
+parser.add_argument('infile', help="Path to `input.bam` file", type=str)
+parser.add_argument('-w', dest='window_size', help="Window size (bp).  DEFAULT: 200", type=int, default=200)
+parser.add_argument('-g', dest='gap', help="Gap size shows how many windows could be skipped. DEFAULT: 1",
+                    type=int, default=1, choices=[1, 2, 3])
+parser.add_argument('-p', dest='p_value', help="p-value; has to be in range(0.0, 1.0). DEFAULT: 0.01",
+                    type=float, default=0.01)
+parser.add_argument('-t', dest='threshold', help="Island score threshold. DEFAULT: 100", type=int, default=100)
+parser.add_argument('-o', dest='outfile', help="Path to `output.bed` file. DEFAULT: path to `input.bam` file; "
+                                               "output file name is `input_peaks.bed`", type=file)
+parser.add_argument('-e', help="Proportion of effective genome length; has to be in range(0.0, 1.0) DEFAULT: 0.77",
+                    type=float, default=0.77)
+parser.add_argument('-c', dest='control', help="Path to `control.bam` file. DEFAULT: no control file",
+                    type=str)
+parser.add_argument('-ref', dest='reference genome', help="Reference genome.  DEFAULT: 'hg19'",
+                    type=str, default='hg19')
+
+args = parser.parse_args(["/home/yegor/Alex_project/H3K4me3.bam"])
+
+# Input arguments: see broadPeaks.py -h or --help
 # bamPath = "/home/dima/BAMfiles/Bernstein_H1_hESC_CTCF.bam"
 # "/home/dima/BAMfiles/h3k4me3_rep1.bam"
-bamPath = "/home/yegor/Alex_project/H3K4me3.bam"
-WINDOW_SIZE = 200
-p0 = 0.01
-GAP = 1
-ISLAND_SCORE_THRESHOLD = 100
+bamPath = args.infile
+window_size = args.window_size
+gap = args.gap
+p0 = args.p_value
+if p0 <= 0 or p0 >= 1:
+    logging.error("p-value has to be in range(0.0, 1.0)")
+if args.e <= 0 or args.e > 1:
+    logging.error("proportion of effective genome length has to be in range(0.0, 1.0)")
+island_score_threshold = args.threshold
+outfile = args.outfile
+if not outfile:
+    outfile = bamPath[:-4] + '_peaks.bed'
+
+controlPath = args.control
 
 # Log file
 logging.basicConfig(filename=(os.path.dirname(bamPath) + '/SICER_log.log'), level=logging.DEBUG)
@@ -193,9 +219,9 @@ print("Counting unique reads")
 total_unique_reads_count = count_unique_reads(bamfile, chromosomes_info)
 
 # Effective genome length
-L = 0.77 * sum(int(row[1]) for row in chromosomes_info)
+L = args.e * sum(int(row[1]) for row in chromosomes_info)
 # Lambda for poisson dist
-lambdaa = float(WINDOW_SIZE) * float(total_unique_reads_count) / float(L)
+lambdaa = float(window_size) * float(total_unique_reads_count) / float(L)
 # Minimum #reads in a window for eligibility
 # Formula (1), finding l0
 l0 = scipy.stats.poisson.ppf(1 - p0, lambdaa)
@@ -203,20 +229,20 @@ l0 = scipy.stats.poisson.ppf(1 - p0, lambdaa)
 
 
 print("Finished counting reads, now making window list")
-windowList = make_windows_list(bamfile, chromosomes_info, l0, WINDOW_SIZE, GAP)
+windowList = make_windows_list(bamfile, chromosomes_info, l0, window_size, gap)
 print("Finished window list, now making island list")
-island_list = make_islands_list(windowList, lambdaa, WINDOW_SIZE, l0, chromosomes_info,
-                                ISLAND_SCORE_THRESHOLD)
+island_list = make_islands_list(windowList, lambdaa, window_size, l0, chromosomes_info,
+                                island_score_threshold)
 
 # print(len(windowList), sys.getsizeof(windowList)/1024)
 # print(len(island_list), sys.getsizeof(island_list)/1024)
 
-f = open(bamPath[:-4] + '_peaks.bed', 'wb')
+f = open(outfile, 'wb')
 for island in island_list:
     islandString = str(island[0]) + "\t" + str(island[1]) + "\t" + str(island[2]) + "\n"
     f.write(islandString)
 # print(island_list[11104])
-
+f.close()
 bamfile.close()
 
 print("Finished. Elapsed time, minutes: " + str((time.time() - startTime) / 60))
