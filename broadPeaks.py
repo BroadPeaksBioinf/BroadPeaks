@@ -70,7 +70,7 @@ def count_unique_reads(bamfile, chromosomes_info):
 
 # Makes a simple list of windows, where each window is a list [WindowStart, ReadsInWindow].
 # Chromosomes are separated by [-1,-1] window
-# Sequences of ineligible windows longer than gap+1 are not stored
+# Sequences of ineligible windows longer than GAP+1 are not stored
 
 
 def make_windows_list(bamfile, chromosomes_info, l0, window_size, gap):
@@ -90,11 +90,11 @@ def make_windows_list(bamfile, chromosomes_info, l0, window_size, gap):
             beginning_of_the_read = ([int(s) for s in read_str.split() if s.isdigit()][2])
             if beginning_of_the_read != beginning_of_the_previous_read:
                 beginning_of_the_previous_read = beginning_of_the_read
-                # Ground state: gap_count <= gap
+                # Ground state: gap_count <= GAP
                 gap_flag = 1
                 while True:
                     # condition seems to be equal, but not
-                    # if i < i + window_size
+                    # if i < i + WINDOW_SIZE
                     if i <= beginning_of_the_read and beginning_of_the_read < i + window_size:
                         window_reads_count += 1
                         break
@@ -106,7 +106,7 @@ def make_windows_list(bamfile, chromosomes_info, l0, window_size, gap):
                         else:
                             gap_flag = 0
                         window_list.append([i, window_reads_count])
-                        # If we have a g+1 sized gap, go and delete last g windows
+                        # If we have a g+1 sized GAP, go and delete last g windows
                         if gap_count > gap or gap_flag == 1:
                             gap_flag = 1
                             while gap_count > 0:
@@ -176,8 +176,8 @@ startTime = time.time()
 parser = argparse.ArgumentParser(description="Tool for ChiP-seq analysis to find broad peaks")
 
 parser.add_argument('infile', help="Path to `input.bam` file", type=str)
-parser.add_argument('-w', dest='window_size', help="Window size (bp).  DEFAULT: 200", type=int, default=200)
-parser.add_argument('-g', dest='gap', help="Gap size shows how many windows could be skipped. DEFAULT: 1",
+parser.add_argument('-w', dest='WINDOW_SIZE', help="Window size (bp).  DEFAULT: 200", type=int, default=200)
+parser.add_argument('-g', dest='GAP', help="Gap size shows how many windows could be skipped. DEFAULT: 1",
                     type=int, default=1, choices=[1, 2, 3])
 parser.add_argument('-p', dest='p_value', help="p-value; has to be in range(0.0, 1.0). DEFAULT: 0.01",
                     type=float, default=0.01)
@@ -197,14 +197,14 @@ args = parser.parse_args(["/home/yegor/Alex_project/H3K4me3.bam"])
 # bamPath = "/home/dima/BAMfiles/Bernstein_H1_hESC_CTCF.bam"
 # "/home/dima/BAMfiles/h3k4me3_rep1.bam"
 bamPath = args.infile
-window_size = args.window_size
-gap = args.gap
+WINDOW_SIZE = args.window_size
+GAP = args.gap
 p0 = args.p_value
 if p0 <= 0 or p0 >= 1:
     logging.error("p-value has to be in range(0.0, 1.0)")
 if args.e <= 0 or args.e > 1:
     logging.error("proportion of effective genome length has to be in range(0.0, 1.0)")
-island_score_threshold = args.threshold
+ISLAND_SCORE_THRESHOLD = args.threshold
 outfile = args.outfile
 if not outfile:
     outfile = bamPath[:-4] + '_peaks.bed'
@@ -221,7 +221,7 @@ total_unique_reads_count = count_unique_reads(bamfile, chromosomes_info)
 # Effective genome length
 L = args.e * sum(int(row[1]) for row in chromosomes_info)
 # Lambda for poisson dist
-lambdaa = float(window_size) * float(total_unique_reads_count) / float(L)
+lambdaa = float(WINDOW_SIZE) * float(total_unique_reads_count) / float(L)
 # Minimum #reads in a window for eligibility
 # Formula (1), finding l0
 l0 = scipy.stats.poisson.ppf(1 - p0, lambdaa)
@@ -229,10 +229,10 @@ l0 = scipy.stats.poisson.ppf(1 - p0, lambdaa)
 
 
 print("Finished counting reads, now making window list")
-windowList = make_windows_list(bamfile, chromosomes_info, l0, window_size, gap)
+windowList = make_windows_list(bamfile, chromosomes_info, l0, WINDOW_SIZE, GAP)
 print("Finished window list, now making island list")
-island_list = make_islands_list(windowList, lambdaa, window_size, l0, chromosomes_info,
-                                island_score_threshold)
+island_list = make_islands_list(windowList, lambdaa, WINDOW_SIZE, l0, chromosomes_info,
+                                ISLAND_SCORE_THRESHOLD)
 
 # print(len(windowList), sys.getsizeof(windowList)/1024)
 # print(len(island_list), sys.getsizeof(island_list)/1024)
