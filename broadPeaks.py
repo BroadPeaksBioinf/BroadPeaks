@@ -19,7 +19,7 @@ def check_and_open_input_bam(bam_path, log_filename):
 
     # Check if it is a BAM file
     if bam_path[-4:] != '.bam':
-        logging.error("`{}` is other file type, not BAM. This tool works only with BAM-files as input".
+        logging.error("`{}` is other file type, not BAM. This tool works only with BAM-files as input (*.bam)".
                       format(bam_path))
         sys.exit("`{}` is not a BAM file. \n More information in `{}`".format(bam_path, log_filename))
 
@@ -79,8 +79,11 @@ def yield_all_reads_in_chromosome(chromosomes_info):
 def count_unique_reads(bamfile, chromosomes_info):
     total_unique_reads_count = 0
     for chromosome in chromosomes_info:
+        chr_unique_reads_count = 0
+        chr_total_reads_count = 0
         beginning_of_the_previous_read = 0
         current_chromosome_name = chromosome[0]
+        logging.info("Counting reads on {}".format(current_chromosome_name))
         # currentChromosomeSize = int(chromosome[1])
         all_reads_in_chromosome = bamfile.fetch(current_chromosome_name)
         for read in all_reads_in_chromosome:
@@ -89,6 +92,11 @@ def count_unique_reads(bamfile, chromosomes_info):
             if beginning_of_the_read != beginning_of_the_previous_read:
                 beginning_of_the_previous_read = beginning_of_the_read
                 total_unique_reads_count += 1
+                chr_unique_reads_count += 1
+            chr_total_reads_count += 1
+        logging.info("There are {} unique reads among {} on {}".format(chr_unique_reads_count,
+                                                                       chr_total_reads_count,
+                                                                       current_chromosome_name))
     # print("Unique reads counted")
     return total_unique_reads_count
     # normalising_coefficient = total_unique_reads_count / 1000000
@@ -101,7 +109,7 @@ def count_unique_reads(bamfile, chromosomes_info):
 # Sequences of ineligible windows longer than GAP+1 are not stored
 
 
-def make_windows_list(bamfile, chromosomes_info, l0, window_size, gap):
+def make_windows_list(bamfile, chromosomes_info, l0, window_size, gap, unique_reads_count):
     window_list = []
     for chromosome in chromosomes_info:
         beginning_of_the_previous_read = 0
@@ -133,7 +141,9 @@ def make_windows_list(bamfile, chromosomes_info, l0, window_size, gap):
                             gap_count += 1
                         else:
                             gap_flag = 0
-                        window_list.append([i, window_reads_count])
+                        # * unique_reads_count/1000000 is for normalization per million reads
+                        # now we are able to compare control and sample
+                        window_list.append([i, window_reads_count * unique_reads_count/1000000])
                         # If we have a g+1 sized GAP, go and delete last g windows
                         if gap_count > gap or gap_flag == 1:
                             gap_flag = 1
@@ -210,18 +220,23 @@ parser.add_argument('-g', dest='gap', help="Gap size shows how many windows coul
 parser.add_argument('-p', dest='p_value', help="p-value; has to be in range(0.0, 1.0). DEFAULT: 0.01",
                     type=float, default=0.01)
 parser.add_argument('-t', dest='threshold', help="Island score threshold. DEFAULT: 100", type=int, default=100)
-parser.add_argument('-o', dest='outfile', help="Path to `output.bed` file. DEFAULT: path to `input.bam` file; "
-                                               "output file name is `input_peaks.bed`", type=file)
+parser.add_argument('-o', dest='outdir', help="Path to directory for output `*_peaks.bed` file. "
+                                              "DEFAULT: output will be in the same directory as `input.bam`",
+                    type=str)
+parser.add_argument('-n', dest="output_name", help="Specify output name. "
+                                                   "DEFAULT : an input file name + `_peaks.bed`", type=str)
 parser.add_argument('-e', help="Proportion of effective genome length; has to be in range(0.0, 1.0) DEFAULT: 0.77",
                     type=float, default=0.77)
 parser.add_argument('-c', dest='control', help="Path to `control.bam` file. DEFAULT: no control file",
                     type=str)
-parser.add_argument('-ref', dest='reference genome', help="Reference genome.  DEFAULT: 'hg19'",
-                    type=str, default='hg19')
+# parser.add_argument('-ref', dest='reference genome', help="Reference genome.  DEFAULT: 'hg19'", type=str, default='hg19')
+
+parser.add_argument('--log', help="To see only current run LOG file. "
+                                  "DEFAULT : LOG file contains information from all runs", action='store_true')
 
 # args as list of strings
-args = parser.parse_args(["/home/yegor/Alex_project/H3K4me3.bam", '-w', '200', '-g', '3'])
-#args = parser.parse_args(["/home/yegor/Alex_project/H3K4me3.bam"])
+args = parser.parse_args(["/home/yegor/Alex_project/H3K4me3.bam",'-w', '200', '-g', '3', '--log'])
+# args = parser.parse_args(["-h"])
 
 # Input arguments: see broadPeaks.py -h or --help
 # bamPath = "/home/dima/BAMfiles/Bernstein_H1_hESC_CTCF.bam"
@@ -233,40 +248,67 @@ p0 = args.p_value
 if p0 <= 0 or p0 >= 1:
     logging.error("`{}` is incorrect p-value. p-value has to be in range(0.0, 1.0)".format(p0))
     sys.exit('`{}` is incorrect p-value. p-value has to be in range(0.0, 1.0)'.format(p0))
-if args.e <= 0 or args.e > 1:
+effective_proportion = args.e
+if effective_proportion <= 0 or effective_proportion > 1:
     logging.error("`{}` is incorrect proportion of effective genome length. "
                   "Proportion of effective genome length has to be in range(0.0, 1.0)".format(args.e))
     sys.exit('`{}` is incorrect proportion of effective genome length. \n '
              'proportion of effective genome length has to be in range(0.0, 1.0)'.format(args.e))
 ISLAND_SCORE_THRESHOLD = args.threshold
-outfile = args.outfile
-if not outfile:
-    outfile = bamPath[:-4] + '_peaks.bed'
+
+# output specifying
+output_dir = args.outdir
+output_name = args.output_name
+if not output_dir:
+    output_dir = bamPath.split("/")[:-1]
+if not output_name:
+    output_name = bamPath.split("/")[-1][:-4] + '_peaks'
+# must test validity of output_name as filename and output_dir presence or ability to create and create
+outfile = output_dir + '/' + output_name + '.bed'
+
 
 controlPath = args.control
 LOG_filename = 'SICER_log.log'
 
 # Log file
-logging.basicConfig(filename=(os.path.dirname(bamPath) + '/' + LOG_filename), level=logging.DEBUG,
+if args.log:
+   logging.basicConfig(filename=(os.path.dirname(bamPath) + '/' + LOG_filename), level=logging.DEBUG,
+                       format='%(asctime)s : %(levelname)s : %(message)s', datefmt='%m/%d/%Y %H:%M:%S',
+                       filemode='w')
+else:
+    logging.basicConfig(filename=(os.path.dirname(bamPath) + '/' + LOG_filename), level=logging.DEBUG,
                     format='%(asctime)s : %(levelname)s : %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
 
 bamfile = check_and_open_input_bam(bamPath, LOG_filename)
 chromosomes_info = get_chromosomes_info(bamPath)
+
 print("Counting unique reads")
 total_unique_reads_count = count_unique_reads(bamfile, chromosomes_info)
 
+
 # Effective genome length
-L = args.e * sum(int(row[1]) for row in chromosomes_info)
+def count_effective_length(effective_proportion, chromosomes_info):
+    total_genome_length = sum(int(row[1]) for row in chromosomes_info)
+    effective_length = effective_proportion * total_genome_length
+    return effective_length
+
+L = count_effective_length(effective_proportion, chromosomes_info)
+
+
 # Lambda for poisson dist
-lambdaa = float(WINDOW_SIZE) * float(total_unique_reads_count) / float(L)
+def count_lambda(unique_reads_count, window_size=WINDOW_SIZE, effective_length=L):
+    lambdaa = float(window_size) * float(unique_reads_count) / float(effective_length)
+    return lambdaa
+
+lambdaa = count_lambda(total_unique_reads_count)
+
 # Minimum #reads in a window for eligibility
 # Formula (1), finding l0
 l0 = scipy.stats.poisson.ppf(1 - p0, lambdaa)
 # print(L, total_unique_reads_count, lambdaa, l0)
 
-
 print("Finished counting reads, now making window list")
-windowList = make_windows_list(bamfile, chromosomes_info, l0, WINDOW_SIZE, GAP)
+windowList = make_windows_list(bamfile, chromosomes_info, l0, WINDOW_SIZE, GAP, total_unique_reads_count)
 print("Finished window list, now making island list")
 island_list = make_islands_list(windowList, lambdaa, WINDOW_SIZE, l0, chromosomes_info,
                                 ISLAND_SCORE_THRESHOLD)
@@ -274,8 +316,26 @@ island_list = make_islands_list(windowList, lambdaa, WINDOW_SIZE, l0, chromosome
 # print(len(windowList), sys.getsizeof(windowList)/1024)
 # print(len(island_list), sys.getsizeof(island_list)/1024)
 
+"""
+IF WE HAVE CONTROL
+
+control_bam = check_and_open_input_bam(controlPath, LOG_filename)
+control_chromosomes_info = get_chromosomes_info(controlPath)
+control_unique_reads_count = count_unique_reads(control_bam, control_chromosomes_info)
+control_L = count_effective_length(effective_proportion, control_chromosomes_info)
+control_lambda = count_lambda(control_unique_reads_count)
+control_l0 = scipy.stats.poisson.ppf(1 - p0, control_lambda)
+control_windowList = make_windows_list(control_bam, control_chromosomes_info, control_l0, WINDOW_SIZE, GAP,
+                                       control_unique_reads_count)
+control_island_list = make_islands_list(control_windowList, control_lambda, WINDOW_SIZE, control_l0,
+                                        control_chromosomes_info, ISLAND_SCORE_THRESHOLD)
+
+final_island_list = [islands for islands in island_list if islands not in control_island_list]
+
+"""
+final_island_list = island_list
 f = open(outfile, 'wb')
-for island in island_list:
+for island in final_island_list:
     islandString = str(island[0]) + "\t" + str(island[1]) + "\t" + str(island[2]) + "\n"
     f.write(islandString)
 # print(island_list[11104])
