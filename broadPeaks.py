@@ -12,9 +12,15 @@ import argparse
 
 
 def input_and_index(bam_path):
-    # Check if there is an BAM file at entered dir
+    # Check if there is a file at entered dir
     if not os.path.isfile(bam_path):
-        logging.error("BAM file does not exist")
+        logging.error("No BAM file specified in input '{}' or there is no such a file".format(bam_path))
+        sys.exit("`{}` is not a path to BAM file. \n More information in `{}`".format(bam_path, LOG_filename))
+
+    if bam_path[-4:] != '.bam':
+        logging.error("`{}` is other file type, not BAM. This tool works only with BAM-files as input".
+                      format(bam_path))
+        sys.exit("`{}` is not a BAM file. \n More information in `{}`".format(bam_path, LOG_filename))
 
     # Check if there is an index file, create one if there isn't
     if not os.path.isfile(bam_path + ".bai"):
@@ -176,8 +182,8 @@ startTime = time.time()
 parser = argparse.ArgumentParser(description="Tool for ChiP-seq analysis to find broad peaks")
 
 parser.add_argument('infile', help="Path to `input.bam` file", type=str)
-parser.add_argument('-w', dest='WINDOW_SIZE', help="Window size (bp).  DEFAULT: 200", type=int, default=200)
-parser.add_argument('-g', dest='GAP', help="Gap size shows how many windows could be skipped. DEFAULT: 1",
+parser.add_argument('-w', dest='window_size', help="Window size (bp).  DEFAULT: 200", type=int, default=200)
+parser.add_argument('-g', dest='gap', help="Gap size shows how many windows could be skipped. DEFAULT: 1",
                     type=int, default=1, choices=[1, 2, 3])
 parser.add_argument('-p', dest='p_value', help="p-value; has to be in range(0.0, 1.0). DEFAULT: 0.01",
                     type=float, default=0.01)
@@ -210,9 +216,11 @@ if not outfile:
     outfile = bamPath[:-4] + '_peaks.bed'
 
 controlPath = args.control
+LOG_filename = 'SICER_log.log'
 
 # Log file
-logging.basicConfig(filename=(os.path.dirname(bamPath) + '/SICER_log.log'), level=logging.DEBUG)
+logging.basicConfig(filename=(os.path.dirname(bamPath) + '/' + LOG_filename), level=logging.DEBUG,
+                    format='%(asctime)s : %(levelname)s : %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
 
 bamfile, chromosomes_info = input_and_index(bamPath)
 print("Counting unique reads")
