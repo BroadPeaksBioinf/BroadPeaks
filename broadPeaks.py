@@ -11,34 +11,56 @@ import scipy.stats
 import argparse
 
 
-def input_and_index(bam_path):
+def check_and_open_input_bam(bam_path, log_filename):
     # Check if there is a file at entered dir
     if not os.path.isfile(bam_path):
         logging.error("No BAM file specified in input '{}' or there is no such a file".format(bam_path))
-        sys.exit("`{}` is not a path to BAM file. \n More information in `{}`".format(bam_path, LOG_filename))
+        sys.exit("`{}` is not a path to BAM file. \n More information in `{}`".format(bam_path, log_filename))
 
+    # Check if it is a BAM file
     if bam_path[-4:] != '.bam':
         logging.error("`{}` is other file type, not BAM. This tool works only with BAM-files as input".
                       format(bam_path))
-        sys.exit("`{}` is not a BAM file. \n More information in `{}`".format(bam_path, LOG_filename))
+        sys.exit("`{}` is not a BAM file. \n More information in `{}`".format(bam_path, log_filename))
 
+    bamfile = pysam.AlignmentFile(bam_path, "rb")
+    return bamfile
+
+
+def get_chromosomes_info(bam_path):
     # Check if there is an index file, create one if there isn't
     if not os.path.isfile(bam_path + ".bai"):
         pysam.index(bam_path)
-        logging.info('No index was found, new index was generated')
-
+        logging.info('No BAM index file was found, new index was generated : `{}`'.format(bam_path + ".bai"))
     # Take chromosome data from BAM index:
     # (ref.seq. name, ref.seq. length, number of mapped reads and number of unmapped reads)
     chromosomes_info = []
+    logging.info('Collecting information about sample from .bai file: '
+                 '[ref.seq. name, ref.seq. length, number of mapped and unmapped reads]')
     for chr in pysam.idxstats(bam_path):
-        chromosomes_info.append(chr.split("\t"))
+        chromosomes_info.append(chr.split("\t")[:-1])
     # Last line is unmapped reads, we don't need them
     chromosomes_info.pop()
     # print(chromosomes_info)
+    return chromosomes_info
 
-    bamfile = pysam.AlignmentFile(bam_path, "rb")
+"""
+DICTIONARY FOR CHROMOSOMES_INFO
 
-    return (bamfile, chromosomes_info)
+chromosomes_info = {} # {"chr_name" : (chr_length, number_of_reads)}
+for chr in pysam.idxstats("/home/yegor/Alex_project/H3K4me3.bam"):
+    chr_s = chr.split("\t")[:-1]
+    chr_name = chr_s[0]
+    chr_tuple = tuple([int(chr_s[1]), int(chr_s[2])])
+    chromosomes_info[chr_name] = chr_tuple
+# Last line is unmapped reads, we don't need them, key ==  '*'
+del chromosomes_info['*']
+print(chromosomes_info)
+
+for values in chromosomes_info.keys():
+    print(type(chromosomes_info[values][1]))
+
+"""
 
 
 """
@@ -197,7 +219,9 @@ parser.add_argument('-c', dest='control', help="Path to `control.bam` file. DEFA
 parser.add_argument('-ref', dest='reference genome', help="Reference genome.  DEFAULT: 'hg19'",
                     type=str, default='hg19')
 
-args = parser.parse_args(["/home/yegor/Alex_project/H3K4me3.bam"])
+# args as list of strings
+args = parser.parse_args(["/home/yegor/Alex_project/H3K4me3.bam", '-w', '200', '-g', '3'])
+#args = parser.parse_args(["/home/yegor/Alex_project/H3K4me3.bam"])
 
 # Input arguments: see broadPeaks.py -h or --help
 # bamPath = "/home/dima/BAMfiles/Bernstein_H1_hESC_CTCF.bam"
@@ -207,9 +231,13 @@ WINDOW_SIZE = args.window_size
 GAP = args.gap
 p0 = args.p_value
 if p0 <= 0 or p0 >= 1:
-    logging.error("p-value has to be in range(0.0, 1.0)")
+    logging.error("`{}` is incorrect p-value. p-value has to be in range(0.0, 1.0)".format(p0))
+    sys.exit('`{}` is incorrect p-value. p-value has to be in range(0.0, 1.0)'.format(p0))
 if args.e <= 0 or args.e > 1:
-    logging.error("proportion of effective genome length has to be in range(0.0, 1.0)")
+    logging.error("`{}` is incorrect proportion of effective genome length. "
+                  "Proportion of effective genome length has to be in range(0.0, 1.0)".format(args.e))
+    sys.exit('`{}` is incorrect proportion of effective genome length. \n '
+             'proportion of effective genome length has to be in range(0.0, 1.0)'.format(args.e))
 ISLAND_SCORE_THRESHOLD = args.threshold
 outfile = args.outfile
 if not outfile:
@@ -222,7 +250,8 @@ LOG_filename = 'SICER_log.log'
 logging.basicConfig(filename=(os.path.dirname(bamPath) + '/' + LOG_filename), level=logging.DEBUG,
                     format='%(asctime)s : %(levelname)s : %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
 
-bamfile, chromosomes_info = input_and_index(bamPath)
+bamfile = check_and_open_input_bam(bamPath, LOG_filename)
+chromosomes_info = get_chromosomes_info(bamPath)
 print("Counting unique reads")
 total_unique_reads_count = count_unique_reads(bamfile, chromosomes_info)
 
