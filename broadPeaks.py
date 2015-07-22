@@ -10,25 +10,10 @@ import scipy
 import scipy.stats
 import argparse
 import arguments
-
-
-def get_chromosomes_info(bam_path):
-    # Check if there is an index file, create one if there isn't
-    if not os.path.isfile(bam_path + ".bai"):
-        pysam.index(bam_path)
-        logging.info('No BAM index file was found, new index was generated : `{}`'.format(bam_path + ".bai"))
-    # Take chromosome data from BAM index:
-    # (ref.seq. name, ref.seq. length, number of mapped reads and number of unmapped reads)
-    chromosomes_info = []
-    logging.info('Collecting information about sample from .bai file: '
-                 '[ref.seq. name, ref.seq. length, number of mapped and unmapped reads]')
-    for chr in pysam.idxstats(bam_path):
-        chromosomes_info.append(chr.split("\t")[:-1])
-    # Last line is unmapped reads, we don't need them
-    chromosomes_info.pop()
-    # print(chromosomes_info)
-    return chromosomes_info
-
+import pre_counting
+import windows
+import islands
+import output
 
 """
 This code repeats, maybe function like this may help.
@@ -41,145 +26,6 @@ def yield_all_reads_in_chromosome(chromosomes_info):
         all_reads_in_chromosome = bamfile.fetch(current_chromosome_name)
         yield all_reads_in_chromosome
 """
-
-
-def count_unique_reads(bamfile, chromosomes_info):
-    total_unique_reads_count = 0
-    for chromosome in chromosomes_info:
-        chr_unique_reads_count = 0
-        chr_total_reads_count = 0
-        beginning_of_the_previous_read = 0
-        current_chromosome_name = chromosome[0]
-        logging.info("Counting reads on {}".format(current_chromosome_name))
-        # currentChromosomeSize = int(chromosome[1])
-        all_reads_in_chromosome = bamfile.fetch(current_chromosome_name)
-        for read in all_reads_in_chromosome:
-            read_str = str(read)
-            beginning_of_the_read = ([int(s) for s in read_str.split() if s.isdigit()][2])
-            if beginning_of_the_read != beginning_of_the_previous_read:
-                beginning_of_the_previous_read = beginning_of_the_read
-                total_unique_reads_count += 1
-                chr_unique_reads_count += 1
-            chr_total_reads_count += 1
-        logging.info("There are {} unique reads among {} on {}".format(chr_unique_reads_count,
-                                                                       chr_total_reads_count,
-                                                                       current_chromosome_name))
-    # print("Unique reads counted")
-    return total_unique_reads_count
-    # normalising_coefficient = total_unique_reads_count / 1000000
-    # it can help to calculate experiments with "control"
-    # read_coverage has to be multiplied on normalising_coefficient
-
-
-# Makes a simple list of windows, where each window is a list [WindowStart, ReadsInWindow].
-# Chromosomes are separated by [-1,-1] window
-# Sequences of ineligible windows longer than GAP+1 are not stored
-
-
-def make_windows_list(bamfile, chromosomes_info, l0, window_size, gap, unique_reads_count):
-    window_list = []
-    for chromosome in chromosomes_info:
-        beginning_of_the_previous_read = 0
-        current_chromosome_name = chromosome[0]
-        current_chromosome_size = int(chromosome[1])
-        # print([current_chromosome_name, current_chromosome_size, len(window_list)])
-        all_reads_in_chromosome = bamfile.fetch(current_chromosome_name)
-
-        gap_count = 0
-        i = 0
-        window_reads_count = 0
-        for read in all_reads_in_chromosome:
-            read_str = str(read)
-            beginning_of_the_read = ([int(s) for s in read_str.split() if s.isdigit()][2])
-            if beginning_of_the_read != beginning_of_the_previous_read:
-                beginning_of_the_previous_read = beginning_of_the_read
-                # Ground state: gap_count <= GAP
-                gap_flag = 1
-                while True:
-                    # condition seems to be equal, but not
-                    # if i < i + WINDOW_SIZE
-                    if i <= beginning_of_the_read and beginning_of_the_read < i + window_size:
-                        window_reads_count += 1
-                        break
-                    elif beginning_of_the_read < i:
-                        break
-                    else:
-                        if window_reads_count < l0:
-                            gap_count += 1
-                        else:
-                            gap_flag = 0
-                            gap_count = 0
-                        # * unique_reads_count/1000000 is for normalization per million reads
-                        # now we are able to compare control and sample
-
-                        # NEED TO CHANGE LAMBDA AND N
-                        window_list.append([i, window_reads_count])
-                        # / (unique_reads_count/1000000)])
-                        # If we have a g+1 sized GAP, go and delete last g windows
-                        if gap_count > gap or gap_flag == 1:
-                            gap_flag = 1
-                            while gap_count > 0:
-                                window_list.pop()
-                                gap_count -= 1
-                        i += window_size
-                        window_reads_count = 0
-
-        # Next chromosome marker just in case
-        window_list.append([-1, -1])
-        print([current_chromosome_name, current_chromosome_size, len(window_list)], "READY")
-    window_list.append([1, 1])
-    return window_list
-
-
-def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, island_score_threshold):
-    chromosome_counter = 0
-    current_chromosome_name = chromosomes_info[chromosome_counter][0]
-    islands_list = []
-    island_score = 0
-    window_start = window_list[0][0] - window_size
-    island_start = window_list[0][0]
-
-    for i, window in enumerate(window_list):
-        # i == # in list, window == [window_start_position, number_of_reads_per_window]
-        window_start_new = window[0]
-        # what is window[1]?
-        number_of_reads = window[1]
-
-        # New chromosome check
-        if window_start_new == -1:
-            print (current_chromosome_name + " done")
-            # move to the next-previous? window
-            window_start = window_list[i + 1][0] - window_size
-            chromosome_counter += 1
-
-            if chromosome_counter < len(chromosomes_info):
-                current_chromosome_name = chromosomes_info[chromosome_counter][0]
-                # print ("start " + current_chromosome_name)
-        else:
-            if window_start_new != window_start + window_size:
-                # A bug here: loads of 0-score islands are generated
-                if island_score >= island_score_threshold:
-                    islands_list.append([current_chromosome_name, island_start,
-                                         window_start + window_size, int(island_score)])
-                island_score = 0
-                island_start = window_start_new
-            else:
-                # Check eligibility
-                if number_of_reads >= l0:
-                    # sometimes 0 and therefore inf in -log  is generated
-                    temp = scipy.stats.poisson.pmf(number_of_reads, lambdaa)
-                    if temp == 0:
-                        window_score = 10
-                    else:
-                        window_score = -numpy.log(temp)
-                else:
-                    window_score = 0
-                island_score = island_score + window_score
-            window_start = window_start_new
-
-    return islands_list
-
-
 startTime = time.time()
 
 # ALL TO main()
@@ -223,32 +69,21 @@ GAP = args.gap
 EFFECTIVE_PROPORTION = arguments.check_effective_proportion(args.e)
 ISLAND_SCORE_THRESHOLD = args.threshold
 outfile = arguments.check_outfile(args.outdir, args.output_name, bamPath)
-controlPath = arguments.check_control(args.control)
+# controlPath = arguments.check_control(args.control)
 # p0 = arguments.check_p_value(args.p_value)
+p0 = 0.01
 
 # main_functions
-bamfile = pysam.AlignmentFile(bamPath, "rb")
-chromosomes_info = get_chromosomes_info(bamPath)
+chromosomes_info = pre_counting.get_chromosomes_info(bamPath)
 
 print("Counting unique reads")
-total_unique_reads_count = count_unique_reads(bamfile, chromosomes_info)
+total_unique_reads_count = pre_counting.count_unique_reads(bamPath, chromosomes_info)
 
-
-# Effective genome length
-def count_effective_length(effective_proportion, chromosomes_info):
-    total_genome_length = sum(int(row[1]) for row in chromosomes_info)
-    effective_length = effective_proportion * total_genome_length
-    return effective_length
-
-L = count_effective_length(EFFECTIVE_PROPORTION, chromosomes_info)
-
+# Effective genome length (L)
+effective_length = pre_counting.count_effective_length(EFFECTIVE_PROPORTION, chromosomes_info)
 
 # Lambda for poisson dist
-def count_lambda(unique_reads_count, window_size=WINDOW_SIZE, effective_length=L):
-    lambdaa = float(window_size) * float(unique_reads_count) / float(effective_length)
-    return lambdaa
-
-lambdaa = count_lambda(total_unique_reads_count)
+lambdaa = pre_counting.count_lambda(total_unique_reads_count, WINDOW_SIZE, effective_length)
 
 # Minimum #reads in a window for eligibility
 # Formula (1), finding l0
@@ -256,13 +91,11 @@ l0 = scipy.stats.poisson.ppf(1 - p0, lambdaa)
 # print(L, total_unique_reads_count, lambdaa, l0)
 
 print("Finished counting reads, now making window list")
-windowList = make_windows_list(bamfile, chromosomes_info, l0, WINDOW_SIZE, GAP, total_unique_reads_count)
+windowList = windows.make_windows_list(bamfile, chromosomes_info, l0, WINDOW_SIZE, GAP, total_unique_reads_count)
 print("Finished window list, now making island list")
-island_list = make_islands_list(windowList, lambdaa, WINDOW_SIZE, l0, chromosomes_info,
-                                ISLAND_SCORE_THRESHOLD)
-
+island_list = islands.make_islands_list(windowList, lambdaa, WINDOW_SIZE, l0, chromosomes_info,ISLAND_SCORE_THRESHOLD)
+output.write_output(outfile, island_list)
 # print(len(windowList), sys.getsizeof(windowList)/1024)
-
 
 """
 IF WE HAVE CONTROL
@@ -275,16 +108,6 @@ control_lambda = count_lambda(control_unique_reads_count)
 control_l0 = scipy.stats.poisson.ppf(1 - p0, control_lambda)
 control_windowList = make_windows_list(control_bam, control_chromosomes_info, control_l0, WINDOW_SIZE, GAP,
                                        control_unique_reads_count)
-
-
 """
-final_island_list = island_list
-f = open(outfile, 'wb')
-for island in final_island_list:
-    islandString = str(island[0]) + "\t" + str(island[1]) + "\t" + str(island[2]) + "\n"
-    f.write(islandString)
-# print(island_list[11104])
-f.close()
-bamfile.close()
 
 print("Finished. Elapsed time, minutes: " + str((time.time() - startTime) / 60))
