@@ -82,7 +82,7 @@ total_unique_reads_count = pre_counting.count_unique_reads(bamPath, chromosomes_
 # Effective genome length (L)
 effective_length = pre_counting.count_effective_length(EFFECTIVE_PROPORTION, chromosomes_info)
 
-# Lambda for poisson dist
+# Lambda for poisson distribution
 lambdaa = pre_counting.count_lambda(total_unique_reads_count, WINDOW_SIZE, effective_length)
 
 # Minimum #reads in a window for eligibility
