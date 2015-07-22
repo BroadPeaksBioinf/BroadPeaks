@@ -91,7 +91,7 @@ l0 = scipy.stats.poisson.ppf(1 - p0, lambdaa)
 # print(L, total_unique_reads_count, lambdaa, l0)
 
 print("Finished counting reads, now making window list")
-windowList = windows.make_windows_list(bamfile, chromosomes_info, l0, WINDOW_SIZE, GAP, total_unique_reads_count)
+windowList = windows.make_windows_list(bamPath, chromosomes_info, l0, WINDOW_SIZE, GAP, total_unique_reads_count)
 print("Finished window list, now making island list")
 island_list = islands.make_islands_list(windowList, lambdaa, WINDOW_SIZE, l0, chromosomes_info,ISLAND_SCORE_THRESHOLD)
 output.write_output(outfile, island_list)

@@ -1,9 +1,11 @@
 #!/usr/bin/env/ python
+import pysam
 
 # Makes a simple list of windows, where each window is a list [WindowStart, ReadsInWindow].
 # Chromosomes are separated by [-1,-1] window
 # Sequences of ineligible windows longer than GAP+1 are not stored
-def make_windows_list(bamfile, chromosomes_info, l0, window_size, gap, unique_reads_count):
+def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_reads_count):
+    bamfile = pysam.AlignmentFile(bam_path, 'rb')
     window_list = []
     for chromosome in chromosomes_info:
         beginning_of_the_previous_read = 0
@@ -55,4 +57,5 @@ def make_windows_list(bamfile, chromosomes_info, l0, window_size, gap, unique_re
         window_list.append([-1, -1])
         print([current_chromosome_name, current_chromosome_size, len(window_list)], "READY")
     window_list.append([1, 1])
+    bamfile.close()
     return window_list
