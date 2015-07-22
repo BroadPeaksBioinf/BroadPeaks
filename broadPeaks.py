@@ -44,27 +44,6 @@ def get_chromosomes_info(bam_path):
     # print(chromosomes_info)
     return chromosomes_info
 
-<<<<<<< HEAD
-=======
-"""
-DICTIONARY FOR CHROMOSOMES_INFO
-
-chromosomes_info = {} # {"chr_name" : (chr_length, number_of_reads)}
-for chr in pysam.idxstats("/home/yegor/Alex_project/H3K4me3.bam"):
-    chr_s = chr.split("\t")[:-1]
-    chr_name = chr_s[0]
-    chr_tuple = tuple([int(chr_s[1]), int(chr_s[2])])
-    chromosomes_info[chr_name] = chr_tuple
-# Last line is unmapped reads, we don't need them, key ==  '*'
-del chromosomes_info['*']
-print(chromosomes_info)
-
-for values in chromosomes_info.keys():
-    print(type(chromosomes_info[values][1]))
-
-"""
-
->>>>>>> origin/master
 
 """
 This code repeats, maybe function like this may help.
@@ -144,7 +123,6 @@ def make_windows_list(bamfile, chromosomes_info, l0, window_size, gap, unique_re
                             gap_count += 1
                         else:
                             gap_flag = 0
-<<<<<<< HEAD
                             gap_count = 0
                         # * unique_reads_count/1000000 is for normalization per million reads
                         # now we are able to compare control and sample
@@ -152,11 +130,6 @@ def make_windows_list(bamfile, chromosomes_info, l0, window_size, gap, unique_re
                         # NEED TO CHANGE LAMBDA AND N
                         window_list.append([i, window_reads_count])
                         # / (unique_reads_count/1000000)])
-=======
-                        # * unique_reads_count/1000000 is for normalization per million reads
-                        # now we are able to compare control and sample
-                        window_list.append([i, window_reads_count * unique_reads_count/1000000])
->>>>>>> origin/master
                         # If we have a g+1 sized GAP, go and delete last g windows
                         if gap_count > gap or gap_flag == 1:
                             gap_flag = 1
@@ -248,11 +221,7 @@ parser.add_argument('--log', help="To see only current run LOG file. "
                                   "DEFAULT : LOG file contains information from all runs", action='store_true')
 
 # args as list of strings
-<<<<<<< HEAD
 args = parser.parse_args()
-=======
-args = parser.parse_args(["/home/yegor/Alex_project/H3K4me3.bam",'-w', '200', '-g', '3', '--log'])
->>>>>>> origin/master
 # args = parser.parse_args(["-h"])
 
 # Input arguments: see broadPeaks.py -h or --help
@@ -277,19 +246,11 @@ ISLAND_SCORE_THRESHOLD = args.threshold
 output_dir = args.outdir
 output_name = args.output_name
 if not output_dir:
-<<<<<<< HEAD
     output_dir = os.path.dirname(bamPath)
 if not output_name:
     output_name = os.path.basename(bamPath)[:-4] + "_peaks"
 # must test validity of output_name as filename and output_dir presence or ability to create and create
 outfile = (output_dir) + "/" + output_name + ".bed"
-=======
-    output_dir = bamPath.split("/")[:-1]
-if not output_name:
-    output_name = bamPath.split("/")[-1][:-4] + '_peaks'
-# must test validity of output_name as filename and output_dir presence or ability to create and create
-outfile = output_dir + '/' + output_name + '.bed'
->>>>>>> origin/master
 
 
 controlPath = args.control
@@ -339,7 +300,7 @@ island_list = make_islands_list(windowList, lambdaa, WINDOW_SIZE, l0, chromosome
                                 ISLAND_SCORE_THRESHOLD)
 
 # print(len(windowList), sys.getsizeof(windowList)/1024)
-# print(len(island_list), sys.getsizeof(island_list)/1024)
+
 
 """
 IF WE HAVE CONTROL
@@ -352,14 +313,7 @@ control_lambda = count_lambda(control_unique_reads_count)
 control_l0 = scipy.stats.poisson.ppf(1 - p0, control_lambda)
 control_windowList = make_windows_list(control_bam, control_chromosomes_info, control_l0, WINDOW_SIZE, GAP,
                                        control_unique_reads_count)
-<<<<<<< HEAD
 
-=======
-control_island_list = make_islands_list(control_windowList, control_lambda, WINDOW_SIZE, control_l0,
-                                        control_chromosomes_info, ISLAND_SCORE_THRESHOLD)
-
-final_island_list = [islands for islands in island_list if islands not in control_island_list]
->>>>>>> origin/master
 
 """
 final_island_list = island_list
