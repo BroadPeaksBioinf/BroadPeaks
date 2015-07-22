@@ -83,17 +83,21 @@ total_unique_reads_count = pre_counting.count_unique_reads(bamPath, chromosomes_
 effective_length = pre_counting.count_effective_length(EFFECTIVE_PROPORTION, chromosomes_info)
 
 # Lambda for poisson distribution
+
 lambdaa = pre_counting.count_lambda(total_unique_reads_count, WINDOW_SIZE, effective_length)
+print(lambdaa)
 
 # Minimum #reads in a window for eligibility
 # Formula (1), finding l0
+# Must make more clear variable name
 l0 = scipy.stats.poisson.ppf(1 - p0, lambdaa)
 # print(L, total_unique_reads_count, lambdaa, l0)
+print(l0)
 
 print("Finished counting reads, now making window list")
 windowList = windows.make_windows_list(bamPath, chromosomes_info, l0, WINDOW_SIZE, GAP, total_unique_reads_count)
 print("Finished window list, now making island list")
-island_list = islands.make_islands_list(windowList, lambdaa, WINDOW_SIZE, l0, chromosomes_info,ISLAND_SCORE_THRESHOLD)
+island_list = islands.make_islands_list(windowList, lambdaa, WINDOW_SIZE, l0, chromosomes_info, ISLAND_SCORE_THRESHOLD)
 output.write_output(outfile, island_list)
 # print(len(windowList), sys.getsizeof(windowList)/1024)
 
