@@ -50,7 +50,7 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
                         window_score = -numpy.log(temp)
                 else:
                     window_score = 0
-                island_score = island_score + window_score
+                island_score += window_score
             window_start = window_start_new
 
     return islands_list
