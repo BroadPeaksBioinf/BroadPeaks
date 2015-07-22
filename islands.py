@@ -29,6 +29,8 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
                 current_chromosome_name = chromosomes_info[chromosome_counter][0]
                 # print ("start " + current_chromosome_name)
         else:
+            # + window_size * gap?
+            # if window_start_new < window_start * (gap + 1) ?
             if window_start_new != window_start + window_size:
                 # A bug here: loads of 0-score islands are generated
                 if island_score >= island_score_threshold:
@@ -41,6 +43,7 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
                 if number_of_reads >= l0:
                     # sometimes 0 and therefore inf in -log  is generated
                     temp = scipy.stats.poisson.pmf(number_of_reads, lambdaa)
+                    # what for temp == 0?
                     if temp == 0:
                         window_score = 10
                     else:
