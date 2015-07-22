@@ -9,22 +9,7 @@ import time
 import scipy
 import scipy.stats
 import argparse
-
-
-def check_and_open_input_bam(bam_path, log_filename):
-    # Check if there is a file at entered dir
-    if not os.path.isfile(bam_path):
-        logging.error("No BAM file specified in input '{}' or there is no such a file".format(bam_path))
-        sys.exit("`{}` is not a path to BAM file. \n More information in `{}`".format(bam_path, log_filename))
-
-    # Check if it is a BAM file
-    if bam_path[-4:] != '.bam':
-        logging.error("`{}` is other file type, not BAM. This tool works only with BAM-files as input (*.bam)".
-                      format(bam_path))
-        sys.exit("`{}` is not a BAM file. \n More information in `{}`".format(bam_path, log_filename))
-
-    bamfile = pysam.AlignmentFile(bam_path, "rb")
-    return bamfile
+import arguments
 
 
 def get_chromosomes_info(bam_path):
@@ -197,14 +182,14 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
 
 startTime = time.time()
 
+# ALL TO main()
+
 parser = argparse.ArgumentParser(description="Tool for ChiP-seq analysis to find broad peaks")
 
 parser.add_argument('infile', help="Path to `input.bam` file", type=str)
 parser.add_argument('-w', dest='window_size', help="Window size (bp).  DEFAULT: 200", type=int, default=200)
 parser.add_argument('-g', dest='gap', help="Gap size shows how many windows could be skipped. DEFAULT: 1",
                     type=int, default=1, choices=[1, 2, 3])
-parser.add_argument('-p', dest='p_value', help="p-value; has to be in range(0.0, 1.0). DEFAULT: 0.01",
-                    type=float, default=0.01)
 parser.add_argument('-t', dest='threshold', help="Island score threshold. DEFAULT: 100", type=int, default=100)
 parser.add_argument('-o', dest='outdir', help="Path to directory for output `*_peaks.bed` file. "
                                               "DEFAULT: output will be in the same directory as `input.bam`",
@@ -215,57 +200,34 @@ parser.add_argument('-e', help="Proportion of effective genome length; has to be
                     type=float, default=0.77)
 parser.add_argument('-c', dest='control', help="Path to `control.bam` file. DEFAULT: no control file",
                     type=str)
-# parser.add_argument('-ref', dest='reference genome', help="Reference genome.  DEFAULT: 'hg19'", type=str, default='hg19')
-
 parser.add_argument('--log', help="To see only current run LOG file. "
                                   "DEFAULT : LOG file contains information from all runs", action='store_true')
+# parser.add_argument('-p', dest='p_value', help="p-value; has to be in range(0.0, 1.0). DEFAULT: 0.01", type=float, default=0.01)
+# parser.add_argument('-ref', dest='reference genome', help="Reference genome.  DEFAULT: 'hg19'", type=str, default='hg19')
 
+"""
+INPUT ARGUMENTS:
+
+see broadPeaks.py -h or --help
+bamPath = "/home/dima/BAMfiles/Bernstein_H1_hESC_CTCF.bam"
+"/home/dima/BAMfiles/h3k4me3_rep1.bam"
+'/home/yegor/Alex_project/H3K4me3.bam'
+"""
 # args as list of strings
-args = parser.parse_args()
-# args = parser.parse_args(["-h"])
+args = parser.parse_args(['/home/yegor/Alex_project/H3K4me3.bam'])
 
-# Input arguments: see broadPeaks.py -h or --help
-# bamPath = "/home/dima/BAMfiles/Bernstein_H1_hESC_CTCF.bam"
-# "/home/dima/BAMfiles/h3k4me3_rep1.bam"
-bamPath = args.infile
+bamPath = arguments.check_input(args.infile)
+arguments.make_log(bamPath, args.log)
 WINDOW_SIZE = args.window_size
 GAP = args.gap
-p0 = args.p_value
-if p0 <= 0 or p0 >= 1:
-    logging.error("`{}` is incorrect p-value. p-value has to be in range(0.0, 1.0)".format(p0))
-    sys.exit('`{}` is incorrect p-value. p-value has to be in range(0.0, 1.0)'.format(p0))
-effective_proportion = args.e
-if effective_proportion <= 0 or effective_proportion > 1:
-    logging.error("`{}` is incorrect proportion of effective genome length. "
-                  "Proportion of effective genome length has to be in range(0.0, 1.0)".format(args.e))
-    sys.exit('`{}` is incorrect proportion of effective genome length. \n '
-             'proportion of effective genome length has to be in range(0.0, 1.0)'.format(args.e))
+EFFECTIVE_PROPORTION = arguments.check_effective_proportion(args.e)
 ISLAND_SCORE_THRESHOLD = args.threshold
+outfile = arguments.check_outfile(args.outdir, args.output_name, bamPath)
+controlPath = arguments.check_control(args.control)
+# p0 = arguments.check_p_value(args.p_value)
 
-# output specifying
-output_dir = args.outdir
-output_name = args.output_name
-if not output_dir:
-    output_dir = os.path.dirname(bamPath)
-if not output_name:
-    output_name = os.path.basename(bamPath)[:-4] + "_peaks"
-# must test validity of output_name as filename and output_dir presence or ability to create and create
-outfile = (output_dir) + "/" + output_name + ".bed"
-
-
-controlPath = args.control
-LOG_filename = 'SICER_log.log'
-
-# Log file
-if args.log:
-   logging.basicConfig(filename=(os.path.dirname(bamPath) + '/' + LOG_filename), level=logging.DEBUG,
-                       format='%(asctime)s : %(levelname)s : %(message)s', datefmt='%m/%d/%Y %H:%M:%S',
-                       filemode='w')
-else:
-    logging.basicConfig(filename=(os.path.dirname(bamPath) + '/' + LOG_filename), level=logging.DEBUG,
-                    format='%(asctime)s : %(levelname)s : %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
-
-bamfile = check_and_open_input_bam(bamPath, LOG_filename)
+# main_functions
+bamfile = pysam.AlignmentFile(bamPath, "rb")
 chromosomes_info = get_chromosomes_info(bamPath)
 
 print("Counting unique reads")
@@ -278,7 +240,7 @@ def count_effective_length(effective_proportion, chromosomes_info):
     effective_length = effective_proportion * total_genome_length
     return effective_length
 
-L = count_effective_length(effective_proportion, chromosomes_info)
+L = count_effective_length(EFFECTIVE_PROPORTION, chromosomes_info)
 
 
 # Lambda for poisson dist
@@ -308,7 +270,7 @@ IF WE HAVE CONTROL
 control_bam = check_and_open_input_bam(controlPath, LOG_filename)
 control_chromosomes_info = get_chromosomes_info(controlPath)
 control_unique_reads_count = count_unique_reads(control_bam, control_chromosomes_info)
-control_L = count_effective_length(effective_proportion, control_chromosomes_info)
+control_L = count_effective_length(EFFECTIVE_PROPORTION, control_chromosomes_info)
 control_lambda = count_lambda(control_unique_reads_count)
 control_l0 = scipy.stats.poisson.ppf(1 - p0, control_lambda)
 control_windowList = make_windows_list(control_bam, control_chromosomes_info, control_l0, WINDOW_SIZE, GAP,
