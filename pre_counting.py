@@ -26,6 +26,7 @@ def get_chromosomes_info(bam_path):
 def count_unique_reads(bam_path, chromosomes_info):
     bamfile = pysam.AlignmentFile(bam_path, 'rb')
     total_unique_reads_count = 0
+    previous_read_strand = 0
     for chromosome in chromosomes_info:
         chr_unique_reads_count = 0
         chr_total_reads_count = 0
@@ -36,9 +37,12 @@ def count_unique_reads(bam_path, chromosomes_info):
         all_reads_in_chromosome = bamfile.fetch(current_chromosome_name)
         for read in all_reads_in_chromosome:
             read_str = str(read)
+            # read strand: 0 = +         16 = -
+            read_strand = ([int(s) for s in read_str.split() if s.isdigit()][0])
             beginning_of_the_read = ([int(s) for s in read_str.split() if s.isdigit()][2])
-            if beginning_of_the_read != beginning_of_the_previous_read:
+            if beginning_of_the_read != beginning_of_the_previous_read or (read_strand != previous_read_strand):
                 beginning_of_the_previous_read = beginning_of_the_read
+                previous_read_strand = read_strand
                 total_unique_reads_count += 1
                 chr_unique_reads_count += 1
             chr_total_reads_count += 1
