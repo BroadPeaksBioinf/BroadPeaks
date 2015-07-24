@@ -23,6 +23,7 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
     window_list = []
     for chromosome in chromosomes_info:
         beginning_of_the_previous_read = 0
+        previous_read_strand = 0
         current_chromosome_name = chromosome[0]
         current_chromosome_size = int(chromosome[1])
         # print([current_chromosome_name, current_chromosome_size, len(window_list)])
@@ -33,10 +34,13 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
         window_reads_count = 0
         for read in all_reads_in_chromosome:
             read_str = str(read)
+            # read strand: 0 = +         16 = -
+            read_strand = ([int(s) for s in read_str.split() if s.isdigit()][0])
             beginning_of_the_read = ([int(s) for s in read_str.split() if s.isdigit()][2])
             # filtering redundant reads
-            if beginning_of_the_read != beginning_of_the_previous_read:
+            if (beginning_of_the_read != beginning_of_the_previous_read) or (read_strand != previous_read_strand):
                 beginning_of_the_previous_read = beginning_of_the_read
+                previous_read_strand = read_strand
                 # Ground state: gap_count <= GAP
                 gap_flag = True
                 while True:
@@ -79,9 +83,9 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
 
 def calculate_window_score(reads_in_window, lambdaa):
     # sometimes 0 and therefore inf in -log  is generated
-        temp = scipy.stats.poisson.pmf(number_of_reads, lambdaa)
+        temp = scipy.stats.poisson.pmf(reads_in_window, lambdaa)
         if temp <1e-320:
-            window_score = 325
+            window_score = 1000
         else:
             window_score = -numpy.log(temp)
         return window_score
@@ -120,7 +124,7 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
                 # A bug here: loads of 0-score islands are generated
                 if island_score >= island_score_threshold:
                     islands_list.append([current_chromosome_name, island_start,
-                                         window_start + window_size, int(island_score)])
+                                         window_start + window_size, (island_score)])
                 island_score = 0
                 island_start = window_start_new
             else:
