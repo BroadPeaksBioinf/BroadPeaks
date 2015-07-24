@@ -4,7 +4,17 @@ import numpy
 import scipy
 import pysam
 
+"""
+This code repeats, maybe function like this may help.
 
+def yield_all_reads_in_chromosome(chromosomes_info):
+     for chromosome in chromosomes_info:
+        beginning_of_the_previous_read = 0
+        current_chromosome_name = chromosome[0]
+        # currentChromosomeSize = int(chromosome[1])
+        all_reads_in_chromosome = bamfile.fetch(current_chromosome_name)
+        yield all_reads_in_chromosome
+"""
 # Makes a simple list of windows, where each window is a list [WindowStart, ReadsInWindow].
 # Chromosomes are separated by [-1,-1] window
 # Sequences of ineligible windows longer than GAP+1 are not stored
@@ -67,6 +77,16 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
 
 
 
+def calculate_window_score(reads_in_window, lambdaa):
+    # sometimes 0 and therefore inf in -log  is generated
+        temp = scipy.stats.poisson.pmf(number_of_reads, lambdaa)
+        if temp <1e-320:
+            window_score = 325
+        else:
+            window_score = -numpy.log(temp)
+        return window_score
+
+
 
 
 def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, island_score_threshold):
@@ -106,13 +126,7 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
             else:
                 # Check eligibility
                 if number_of_reads >= l0:
-                    # sometimes 0 and therefore inf in -log  is generated
-                    temp = scipy.stats.poisson.pmf(number_of_reads, lambdaa)
-                    # what for temp == 0?
-                    if temp == 0:
-                        window_score = 10
-                    else:
-                        window_score = -numpy.log(temp)
+                    window_score = calculate_window_score(number_of_reads, lambdaa)
                 else:
                     window_score = 0
                 island_score += window_score

@@ -14,17 +14,7 @@ import pre_counting
 import islands
 import output
 
-"""
-This code repeats, maybe function like this may help.
 
-def yield_all_reads_in_chromosome(chromosomes_info):
-     for chromosome in chromosomes_info:
-        beginning_of_the_previous_read = 0
-        current_chromosome_name = chromosome[0]
-        # currentChromosomeSize = int(chromosome[1])
-        all_reads_in_chromosome = bamfile.fetch(current_chromosome_name)
-        yield all_reads_in_chromosome
-"""
 startTime = time.time()
 
 # ALL TO main()
@@ -95,9 +85,9 @@ l0 = scipy.stats.poisson.ppf(1 - p0, lambdaa)
 print(l0)
 
 print("Finished counting reads, now making window list")
-windowList = islands.make_windows_list(bamPath, chromosomes_info, l0, WINDOW_SIZE, GAP, total_unique_reads_count)
+window_list = islands.make_windows_list(bamPath, chromosomes_info, l0, WINDOW_SIZE, GAP, total_unique_reads_count)
 print("Finished window list, now making island list")
-island_list = islands.make_islands_list(windowList, lambdaa, WINDOW_SIZE, l0, chromosomes_info, ISLAND_SCORE_THRESHOLD)
+island_list = islands.make_islands_list(window_list, lambdaa, WINDOW_SIZE, l0, chromosomes_info, ISLAND_SCORE_THRESHOLD)
 output.write_output(outfile, island_list)
 # print(len(windowList), sys.getsizeof(windowList)/1024)
 
