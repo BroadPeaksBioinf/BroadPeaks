@@ -81,8 +81,9 @@ print(lambdaa)
 # Formula (1), finding l0
 # Must make more clear variable name
 l0 = scipy.stats.poisson.ppf(1 - p0, lambdaa)
+logging.info('WINDOW READ THRESHOLD, #READS: `{}`'.format(str(l0)))
 # print(L, total_unique_reads_count, lambdaa, l0)
-print(l0)
+# print(l0)
 
 print("Finished counting reads, now making window list")
 window_list = islands.make_windows_list(bamPath, chromosomes_info, l0, WINDOW_SIZE, GAP, total_unique_reads_count)
