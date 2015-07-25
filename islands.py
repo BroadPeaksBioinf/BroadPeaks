@@ -92,7 +92,7 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
 def calculate_window_score(reads_in_window, lambdaa):
     # sometimes 0 and therefore inf in -log  is generated
         temp = scipy.stats.poisson.pmf(reads_in_window, lambdaa)
-        if temp <1e-320:
+        if temp < 1e-320:
             window_score = 1000
         else:
             window_score = -numpy.log(temp)
@@ -127,7 +127,7 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
             # + window_size * gap?
             # if window_start_new < window_start * (gap + 1) ?
             if window_start_new != window_start + window_size:
-                # A bug here: loads of 0-score islands are generated
+                # A bug here: loads of 0-score islands are generated when threshold == 0
                 if island_score >= island_score_threshold:
                     islands_list.append([current_chromosome_name, island_start,
                                          window_start + window_size, island_score])
