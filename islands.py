@@ -3,6 +3,7 @@
 import numpy
 import scipy
 import pysam
+import logging
 
 """
 This code repeats, maybe function like this may help.
@@ -18,9 +19,14 @@ def yield_all_reads_in_chromosome(chromosomes_info):
 # Makes a simple list of windows, where each window is a list [WindowStart, ReadsInWindow].
 # Chromosomes are separated by [-1,-1] window
 # Sequences of ineligible windows longer than GAP+1 are not stored
+
+
 def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_reads_count):
+    logging.info("Making eligible windows of {} bp with allowed gap_size {} bp".format(window_size, window_size*gap))
     bamfile = pysam.AlignmentFile(bam_path, 'rb')
     window_list = []
+    previous_chr_windows = 0
+    # logging.info("chromosome_name, chromosome_size, total_number_of_eligible_windows_on_chromosome")
     for chromosome in chromosomes_info:
         beginning_of_the_previous_read = 0
         previous_read_strand = 0
@@ -28,10 +34,11 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
         current_chromosome_size = int(chromosome[1])
         # print([current_chromosome_name, current_chromosome_size, len(window_list)])
         all_reads_in_chromosome = bamfile.fetch(current_chromosome_name)
-
         gap_count = 0
         window_start = 0
         window_reads_count = 0
+        # just for precise number of windows counting
+        i = 0
         for read in all_reads_in_chromosome:
             read_str = str(read)
             # read strand: 0 = +         16 = -
@@ -71,14 +78,15 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
                                 gap_count -= 1
                         window_start += window_size
                         window_reads_count = 0
+        previous_chr_windows = len(window_list) - previous_chr_windows
+        i += 1
         # Next chromosome marker just in case
         window_list.append([-1, -1])
-        print([current_chromosome_name, current_chromosome_size, len(window_list)], "READY")
+        logging.info("On {} there are {} eligible windows".format(current_chromosome_name, previous_chr_windows))
+    logging.info("\nThere are {} eligible windows".format(len(window_list) - i))
     window_list.append([1, 1])
     bamfile.close()
     return window_list
-
-
 
 
 def calculate_window_score(reads_in_window, lambdaa):
@@ -91,8 +99,6 @@ def calculate_window_score(reads_in_window, lambdaa):
         return window_score
 
 
-
-
 def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, island_score_threshold):
     chromosome_counter = 0
     current_chromosome_name = chromosomes_info[chromosome_counter][0]
@@ -100,7 +106,7 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
     island_score = 0
     window_start = window_list[0][0] - window_size
     island_start = window_list[0][0]
-
+    bug = 0
     for i, window in enumerate(window_list):
         # i == # in list, window == [window_start_position, number_of_reads_per_window]
         window_start_new = window[0]
@@ -109,7 +115,7 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
 
         # New chromosome check
         if window_start_new == -1:
-            print (current_chromosome_name + " done")
+            # print (current_chromosome_name + " done")
             # move to the next-previous? window
             window_start = window_list[i + 1][0] - window_size
             chromosome_counter += 1
@@ -124,7 +130,9 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
                 # A bug here: loads of 0-score islands are generated
                 if island_score >= island_score_threshold:
                     islands_list.append([current_chromosome_name, island_start,
-                                         window_start + window_size, (island_score)])
+                                         window_start + window_size, island_score])
+                    if island_score == 0:
+                        bug += 1
                 island_score = 0
                 island_start = window_start_new
             else:
@@ -135,5 +143,6 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
                     window_score = 0
                 island_score += window_score
             window_start = window_start_new
-
+    logging.info("There are {} islands found".format(len(islands_list)))
+    print(bug)
     return islands_list

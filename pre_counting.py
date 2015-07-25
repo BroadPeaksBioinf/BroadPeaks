@@ -15,6 +15,7 @@ def get_chromosomes_info(bam_path):
     chromosomes_info = []
     logging.info('Collecting information about sample from .bai file: '
                  '[ref.seq. name, ref.seq. length, number of mapped and unmapped reads]')
+    logging.info("\nGenome ID {} \nEstimated mappability {}".format('?', '?'))
     for chr in pysam.idxstats(bam_path):
         chromosomes_info.append(chr.split("\t")[:-1])
     # Last line is unmapped reads, we don't need them
@@ -25,14 +26,17 @@ def get_chromosomes_info(bam_path):
 
 def count_unique_reads(bam_path, chromosomes_info):
     bamfile = pysam.AlignmentFile(bam_path, 'rb')
+    total_reads_count = 0
     total_unique_reads_count = 0
     previous_read_strand = 0
+    plus_reads_count = 0
+    minus_reads_count = 0
+    all_read_length = set()
     for chromosome in chromosomes_info:
         chr_unique_reads_count = 0
         chr_total_reads_count = 0
         beginning_of_the_previous_read = 0
         current_chromosome_name = chromosome[0]
-        logging.info("Counting reads on {}".format(current_chromosome_name))
         # currentChromosomeSize = int(chromosome[1])
         all_reads_in_chromosome = bamfile.fetch(current_chromosome_name)
         for read in all_reads_in_chromosome:
@@ -40,17 +44,31 @@ def count_unique_reads(bam_path, chromosomes_info):
             # read strand: 0 = +         16 = -
             read_strand = ([int(s) for s in read_str.split() if s.isdigit()][0])
             beginning_of_the_read = ([int(s) for s in read_str.split() if s.isdigit()][2])
-            if beginning_of_the_read != beginning_of_the_previous_read or (read_strand != previous_read_strand):
+            if beginning_of_the_read != beginning_of_the_previous_read or read_strand != previous_read_strand:
                 beginning_of_the_previous_read = beginning_of_the_read
+                if read_strand == 0:
+                    minus_reads_count += 1
+                else:
+                    plus_reads_count += 1
                 previous_read_strand = read_strand
+                all_read_length.add(int(read_str.split()[8]))
                 total_unique_reads_count += 1
                 chr_unique_reads_count += 1
             chr_total_reads_count += 1
-        logging.info("There are {} unique reads among {} on {}".format(chr_unique_reads_count,
-                                                                       chr_total_reads_count,
-                                                                       current_chromosome_name))
+        logging.info("On {} there are {} unique reads among {}".format(current_chromosome_name,
+                                                                       chr_unique_reads_count,
+                                                                       chr_total_reads_count,))
+        total_reads_count += chr_total_reads_count
     # print("Unique reads counted")
     bamfile.close()
+    if len(all_read_length) == 1:
+        logging.info("\nAverage read length {} bp".format(all_read_length.pop()))
+    else:
+        logging.warn('\nVariable read length')
+    logging.info("Library depth: there are {} unique reads out of {}.\nIn other words {} % of reads are unique".
+                 format(total_unique_reads_count, total_reads_count,
+                        round(float(total_unique_reads_count)/float(total_reads_count)*100, 1)))
+    logging.info("Strand symmetry: \n {} (+) \n {} (-)".format(plus_reads_count, minus_reads_count))
     return total_unique_reads_count
     # normalising_coefficient = total_unique_reads_count / 1000000
     # it can help to calculate experiments with "control"
@@ -65,4 +83,5 @@ def count_effective_length(effective_proportion, chromosomes_info):
 
 def count_lambda(unique_reads_count, window_size, effective_length):
     lambdaa = float(window_size) * float(unique_reads_count) / float(effective_length)
+    logging.info("\nAverage density of reads per {} bp window is {}".format(window_size, round(lambdaa, 2)))
     return lambdaa

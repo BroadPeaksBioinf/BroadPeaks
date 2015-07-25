@@ -3,6 +3,7 @@
 import sys
 import logging
 import os.path
+import colorized_log
 
 
 def check_input(input_path):
@@ -26,7 +27,13 @@ def make_log(input_path, log_flag):
     else:
         logging.basicConfig(filename=log_path, level=logging.DEBUG,
                     format='%(asctime)s : %(levelname)s : %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
-
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
+    # formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
+    # console.setFormatter(formatter)
+    formatter = colorized_log.ColoredFormatter('%(message)s')
+    console.setFormatter(formatter)
+    logging.getLogger('').addHandler(console)
 
 def check_control(control_path):
     if not os.path.isfile(control_path):
@@ -41,7 +48,7 @@ def check_control(control_path):
 def check_p_value(p0):
     if p0 <= 0 or p0 >= 1:
         logging.error("`{}` is incorrect p-value. p-value has to be in range(0.0, 1.0)".format(p0))
-        sys.exit('`{}` is incorrect p-value. p-value has to be in range(0.0, 1.0)'.format(p0))
+        sys.exit()
     return p0
 
 
@@ -49,8 +56,7 @@ def check_effective_proportion(effective_proportion):
     if effective_proportion <= 0 or effective_proportion > 1:
         logging.error("`{}` is incorrect proportion of effective genome length. \n "
                       "Proportion of effective genome length has to be in range(0.0, 1.0)".format(effective_proportion))
-        sys.exit('`{}` is incorrect proportion of effective genome length. \n '
-                 'proportion of effective genome length has to be in range(0.0, 1.0)'.format(effective_proportion))
+        sys.exit()
     return effective_proportion
 
 

@@ -50,7 +50,8 @@ bamPath = "/home/dima/BAMfiles/Bernstein_H1_hESC_CTCF.bam"
 """
 # args as list of strings
 #args = parser.parse_args(['/home/yegor/Alex_project/H3K4me3.bam'])
-args = parser.parse_args()
+# ["/home/user/SICERproj/BAMfiles/H3K4Me3_test.bam"
+args = parser.parse_args(["/home/user/SICERproj/BAMfiles/H3K4Me3_test.bam"])
 
 bamPath = arguments.check_input(args.infile)
 arguments.make_log(bamPath, args.log)
@@ -66,29 +67,27 @@ p0 = 0.01
 # main_functions
 chromosomes_info = pre_counting.get_chromosomes_info(bamPath)
 
-print("Counting unique reads")
+logging.info("\nCOUNTING UNIQUE READS\n")
 total_unique_reads_count = pre_counting.count_unique_reads(bamPath, chromosomes_info)
 
 # Effective genome length (L)
 effective_length = pre_counting.count_effective_length(EFFECTIVE_PROPORTION, chromosomes_info)
-
 # Lambda for poisson distribution
-
 lambdaa = pre_counting.count_lambda(total_unique_reads_count, WINDOW_SIZE, effective_length)
-print(lambdaa)
-
 # Minimum #reads in a window for eligibility
 # Formula (1), finding l0
 # Must make more clear variable name
 l0 = scipy.stats.poisson.ppf(1 - p0, lambdaa)
-logging.info('WINDOW READ THRESHOLD, #READS: `{}`'.format(str(l0)))
-# print(L, total_unique_reads_count, lambdaa, l0)
-# print(l0)
+logging.info("\nWindow read threshold is {} reads, \ni.e. {} is minimum number of reads in window "
+             "to consider this window `eligible` with Poisson distribution p-value {}".format(l0, l0, p0))
 
-print("Finished counting reads, now making window list")
+logging.info("\nMAKING WINDOW LIST\n")
 window_list = islands.make_windows_list(bamPath, chromosomes_info, l0, WINDOW_SIZE, GAP, total_unique_reads_count)
-print("Finished window list, now making island list")
+
+logging.info("\nMAKING ISLAND LIST\n")
 island_list = islands.make_islands_list(window_list, lambdaa, WINDOW_SIZE, l0, chromosomes_info, ISLAND_SCORE_THRESHOLD)
+
+logging.info("\nWRITING FOUND ISLANDS TO `{}` BED FILE\n".format(outfile))
 output.write_output(outfile, island_list)
 # print(len(windowList), sys.getsizeof(windowList)/1024)
 
