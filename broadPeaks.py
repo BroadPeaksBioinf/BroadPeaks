@@ -67,7 +67,7 @@ p0 = 0.01
 # main_functions
 chromosomes_info = pre_counting.get_chromosomes_info(bamPath)
 
-logging.info("\nCOUNTING UNIQUE READS\n")
+logging.info("\nStep 1 of 4\nCOUNTING UNIQUE READS\n")
 total_unique_reads_count = pre_counting.count_unique_reads(bamPath, chromosomes_info)
 
 # Effective genome length (L)
@@ -81,13 +81,13 @@ l0 = scipy.stats.poisson.ppf(1 - p0, lambdaa)
 logging.info("\nWindow read threshold is {} reads, \ni.e. {} is minimum number of reads in window "
              "to consider this window `eligible` with Poisson distribution p-value {}".format(l0, l0, p0))
 
-logging.info("\nMAKING WINDOW LIST\n")
+logging.info("\nStep 2 of 4\nMAKING WINDOW LIST\n")
 window_list = islands.make_windows_list(bamPath, chromosomes_info, l0, WINDOW_SIZE, GAP, total_unique_reads_count)
 
-logging.info("\nMAKING ISLAND LIST\n")
+logging.info("\nStep 3 of 4\nMAKING ISLAND LIST\n")
 island_list = islands.make_islands_list(window_list, lambdaa, WINDOW_SIZE, l0, chromosomes_info, ISLAND_SCORE_THRESHOLD)
 
-logging.info("\nWRITING FOUND ISLANDS TO `{}` BED FILE\n".format(outfile))
+logging.info("\nStep 4 of 4\nWRITING FOUND ISLANDS TO `{}` BED FILE\n".format(outfile))
 output.write_output(outfile, island_list)
 # print(len(windowList), sys.getsizeof(windowList)/1024)
 

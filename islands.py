@@ -38,6 +38,7 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
         window_start = 0
         window_reads_count = 0
         # just for precise number of windows counting
+        chr_window = 0
         i = 0
         for read in all_reads_in_chromosome:
             read_str = str(read)
@@ -69,6 +70,7 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
 
                         # NEED TO CHANGE LAMBDA AND N
                         window_list.append([window_start, window_reads_count])
+                        chr_window += 1
                         # / (unique_reads_count/1000000)])
                         # If we have a g+1 sized GAP, go and delete last g windows
                         if gap_count > gap or gap_flag:
@@ -76,13 +78,14 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
                             while gap_count > 0:
                                 window_list.pop()
                                 gap_count -= 1
+                                chr_window -= 1
                         window_start += window_size
                         window_reads_count = 0
-        previous_chr_windows = len(window_list) - previous_chr_windows
-        i += 1
+        previous_chr_windows = len(window_list) - previous_chr_windows - i
         # Next chromosome marker just in case
         window_list.append([-1, -1])
-        logging.info("On {} there are {} eligible windows".format(current_chromosome_name, previous_chr_windows))
+        i += 1
+        logging.info("On {} there are {} eligible windows".format(current_chromosome_name, chr_window))
     logging.info("\nThere are {} eligible windows".format(len(window_list) - i))
     window_list.append([1, 1])
     bamfile.close()
@@ -106,7 +109,7 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
     island_score = 0
     window_start = window_list[0][0] - window_size
     island_start = window_list[0][0]
-    bug = 0
+    zero_score_islands = 0
     for i, window in enumerate(window_list):
         # i == # in list, window == [window_start_position, number_of_reads_per_window]
         window_start_new = window[0]
@@ -125,18 +128,20 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
                 # print ("start " + current_chromosome_name)
         else:
             # + window_size * gap?
-            # if window_start_new < window_start * (gap + 1) ?
+            # if window_start_new < window_start * (gap + 1) ?!!
+            # if the next window further than allowed gap
             if window_start_new != window_start + window_size:
                 # A bug here: loads of 0-score islands are generated when threshold == 0
-                if island_score >= island_score_threshold:
-                    islands_list.append([current_chromosome_name, island_start,
-                                         window_start + window_size, island_score])
-                    if island_score == 0:
-                        bug += 1
+                islands_list.append([current_chromosome_name, island_start,
+                                    window_start + window_size, island_score])
+                # just to check how many zeros we have
+                # zero-score island == gap
+                if island_score == 0:
+                    zero_score_islands += 1
                 island_score = 0
                 island_start = window_start_new
             else:
-                # Check eligibility
+                # Set score
                 if number_of_reads >= l0:
                     window_score = calculate_window_score(number_of_reads, lambdaa)
                 else:
@@ -144,5 +149,5 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
                 island_score += window_score
             window_start = window_start_new
     logging.info("There are {} islands found".format(len(islands_list)))
-    print(bug)
+    print(zero_score_islands)
     return islands_list

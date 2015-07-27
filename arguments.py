@@ -5,8 +5,13 @@ import logging
 import os.path
 import colorized_log
 
+"""I see this help"""
 
 def check_input(input_path):
+    """
+    :param input_path: (str)
+    :return: input_path
+    """
     # Check if there is a file at entered dir
     if not os.path.isfile(input_path):
         sys.exit("No BAM file specified in input '{}' or there is no such a file".format(input_path))

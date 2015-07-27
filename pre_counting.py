@@ -51,7 +51,7 @@ def count_unique_reads(bam_path, chromosomes_info):
                 else:
                     plus_reads_count += 1
                 previous_read_strand = read_strand
-                all_read_length.add(int(read_str.split()[8]))
+                all_read_length.add(len(read_str.split()[9]))
                 total_unique_reads_count += 1
                 chr_unique_reads_count += 1
             chr_total_reads_count += 1
