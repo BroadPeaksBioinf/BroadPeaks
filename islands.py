@@ -25,7 +25,6 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
     logging.info("Making eligible windows of {} bp with allowed gap_size {} bp".format(window_size, window_size*gap))
     bamfile = pysam.AlignmentFile(bam_path, 'rb')
     window_list = []
-    previous_chr_windows = 0
     # logging.info("chromosome_name, chromosome_size, total_number_of_eligible_windows_on_chromosome")
     for chromosome in chromosomes_info:
         beginning_of_the_previous_read = 0
@@ -81,12 +80,12 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
                                 chr_window -= 1
                         window_start += window_size
                         window_reads_count = 0
-        previous_chr_windows = len(window_list) - previous_chr_windows - i
         # Next chromosome marker just in case
         window_list.append([-1, -1])
         i += 1
         logging.info("On {} there are {} eligible windows".format(current_chromosome_name, chr_window))
-    logging.info("\nThere are {} eligible windows".format(len(window_list) - i))
+    # candidate windows == eligible + ineligible(below gap)
+    logging.info("\nThere are {} candidate windows".format(len(window_list) - i))
     window_list.append([1, 1])
     bamfile.close()
     return window_list
