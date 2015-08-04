@@ -51,7 +51,7 @@ bamPath = "/home/dima/BAMfiles/Bernstein_H1_hESC_CTCF.bam"
 # args as list of strings
 #args = parser.parse_args(['/home/yegor/Alex_project/H3K4me3.bam'])
 # ["/home/user/SICERproj/BAMfiles/H3K4Me3_test.bam"
-args = parser.parse_args(["/home/user/SICERproj/BAMfiles/H3K4Me3_test.bam"])
+args = parser.parse_args()
 
 bamPath = arguments.check_input(args.infile)
 arguments.make_log(bamPath, args.log)
