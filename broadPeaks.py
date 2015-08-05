@@ -25,7 +25,7 @@ parser.add_argument('infile', help="Path to `input.bam` file", type=str)
 parser.add_argument('-w', dest='window_size', help="Window size (bp).  DEFAULT: 200", type=int, default=200)
 parser.add_argument('-g', dest='gap', help="Gap size shows how many windows could be skipped. DEFAULT: 1",
                     type=int, default=1, choices=[1, 2, 3])
-parser.add_argument('-t', dest='threshold', help="Island score threshold. DEFAULT: 100", type=int, default=100)
+parser.add_argument('-t', dest='threshold', help="Island score threshold. DEFAULT: 100", type=int, default=0)
 parser.add_argument('-o', dest='outdir', help="Path to directory for output `*_peaks.bed` file. "
                                               "DEFAULT: output will be in the same directory as `input.bam`",
                     type=str)

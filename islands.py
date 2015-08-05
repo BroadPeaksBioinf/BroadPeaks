@@ -91,14 +91,17 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
     return window_list
 
 
-def calculate_window_score(reads_in_window, lambdaa):
+def calculate_window_score(reads_in_window, lambdaa, l0):
     # sometimes 0 and therefore inf in -log  is generated
+    if reads_in_window >= l0:
         temp = scipy.stats.poisson.pmf(reads_in_window, lambdaa)
         if temp < 1e-320:
             window_score = 1000
         else:
             window_score = -numpy.log(temp)
-        return window_score
+    else:
+        window_score = 0
+    return window_score
 
 
 def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, island_score_threshold):
@@ -124,27 +127,20 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
 
             if chromosome_counter < len(chromosomes_info):
                 current_chromosome_name = chromosomes_info[chromosome_counter][0]
-                # print ("start " + current_chromosome_name)
         else:
-            # + window_size * gap?
-            # if window_start_new < window_start * (gap + 1) ?!!
-            # if the next window further than allowed gap
+            # if the next window belongs to the next island:
             if window_start_new != window_start + window_size:
-                # A bug here: loads of 0-score islands are generated when threshold == 0
+                # Special case for the one-window island:
+                if window_start == island_start:
+                    island_score = calculate_window_score(number_of_reads, lambdaa, l0)
                 islands_list.append([current_chromosome_name, island_start,
                                     window_start + window_size, island_score])
-                # just to check how many zeros we have
-                # zero-score island == gap
-                if island_score == 0:
-                    zero_score_islands += 1
                 island_score = 0
                 island_start = window_start_new
             else:
                 # Set score
-                if number_of_reads >= l0:
-                    window_score = calculate_window_score(number_of_reads, lambdaa)
-                else:
-                    window_score = 0
+                window_score = calculate_window_score(number_of_reads, lambdaa, l0)
+
                 island_score += window_score
             window_start = window_start_new
     logging.info("There are {} islands found".format(len(islands_list)))
