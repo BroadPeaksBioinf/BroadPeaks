@@ -25,7 +25,7 @@ parser.add_argument('infile', help="Path to `input.bam` file", type=str)
 parser.add_argument('-w', dest='window_size', help="Window size (bp).  DEFAULT: 200", type=int, default=200)
 parser.add_argument('-g', dest='gap', help="Gap size shows how many windows could be skipped. DEFAULT: 1",
                     type=int, default=1, choices=[1, 2, 3])
-parser.add_argument('-t', dest='threshold', help="Island score threshold. DEFAULT: 100", type=int, default=0)
+parser.add_argument('-t', dest='threshold', help="Island score threshold. DEFAULT: 0", type=int, default=0)
 parser.add_argument('-o', dest='outdir', help="Path to directory for output `*_peaks.bed` file. "
                                               "DEFAULT: output will be in the same directory as `input.bam`",
                     type=str)
@@ -88,8 +88,7 @@ logging.info("\nStep 3 of 4\nMAKING ISLAND LIST\n")
 island_list = islands.make_islands_list(window_list, lambdaa, WINDOW_SIZE, l0, chromosomes_info, ISLAND_SCORE_THRESHOLD)
 
 logging.info("\nStep 4 of 4\nWRITING FOUND ISLANDS TO `{}` BED FILE\n".format(outfile))
-output.write_output(outfile, island_list)
-# print(len(windowList), sys.getsizeof(windowList)/1024)
+output.write_output(outfile, island_list, ISLAND_SCORE_THRESHOLD)
 
 """
 IF WE HAVE CONTROL
