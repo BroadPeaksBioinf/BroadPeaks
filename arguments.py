@@ -67,7 +67,7 @@ def check_effective_proportion(effective_proportion):
 
 def check_outfile(output_dir, output_name, input_path):
     if not output_dir:
-        output_dir = os.path.dirname(input_path)
+        os.makedirs(output_dir)
     if not output_name:
         output_name = os.path.basename(input_path)[:-4] + "_peaks"
     # must test validity of output_name as filename
