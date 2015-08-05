@@ -136,7 +136,7 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
                     island_number_of_reads = number_of_reads
                 island_length = (window_start + window_size - island_start)/window_size
                 islands_list.append([current_chromosome_name, island_start,
-                                    window_start + window_size, island_score, island_number_of_reads, island_length, island_number_of_gaps])
+                                    window_start + window_size, island_score, island_number_of_reads, island_length - island_number_of_gaps, island_number_of_gaps])
                 island_score = 0
                 island_number_of_reads = 0
                 island_number_of_gaps = 0
