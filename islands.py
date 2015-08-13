@@ -91,6 +91,73 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
     return window_list
 
 
+
+
+def modify_window_list_based_on_control(control_path, chromosomes_info, l0, window_size, gap, unique_reads_count, control_unique_reads_count, window_list_wo_control):
+    logging.info("Making window list based on control")
+    bamfile = pysam.AlignmentFile(control_path, 'rb')
+    NORMALIZATION_CONSTANT = float(unique_reads_count)/float(control_unique_reads_count)
+    window_list = []
+    i = 0
+    # logging.info("chromosome_name, chromosome_size, total_number_of_eligible_windows_on_chromosome")
+    for chromosome in chromosomes_info:
+        beginning_of_the_previous_read = 0
+        previous_read_strand = 0
+        current_chromosome_name = chromosome[0]
+        current_chromosome_size = int(chromosome[1])
+        all_reads_in_chromosome = bamfile.fetch(current_chromosome_name)
+        window_start = window_list_wo_control[i][0]
+        control_window_reads_count = 0
+
+        for read in all_reads_in_chromosome:
+            read_str = str(read)
+            # read strand: 0 = +         16 = -
+            read_strand = ([int(s) for s in read_str.split() if s.isdigit()][0])
+            beginning_of_the_read = ([int(s) for s in read_str.split() if s.isdigit()][2])
+            # filtering redundant reads
+            if (beginning_of_the_read != beginning_of_the_previous_read) or (read_strand != previous_read_strand):
+                beginning_of_the_previous_read = beginning_of_the_read
+                previous_read_strand = read_strand
+
+                if window_start <= beginning_of_the_read and beginning_of_the_read < window_start + window_size:
+                    control_window_reads_count += 1
+                    break
+                elif beginning_of_the_read < window_start:
+                    break
+                else:
+                    window_reads_count = window_list_wo_control[i][1] - int(control_window_reads_count*NORMALIZATION_CONSTANT)
+                    window_list.append([window_start, window_reads_count])
+                    i += 1
+                    window_start = window_list_wo_control[i][0]
+                    #next chromosome check
+                    if window_start == -1:
+                        window_list.append([-1,-1])
+                        window_start = window_list_wo_control[i][0]
+                        i += 1
+                        break
+        #go and do next chrom
+
+    #prune new window list of gaps
+    gap_count = 0
+    gap_flag = True
+    window_list_new = []
+    for window in window_list:
+        window_list_new.append(window)
+        if window[1] < l0:
+            gap_count += 1
+        else:
+            gap_flag = False
+        if gap_count > gap or gap_flag:
+            gap_flag = True
+            while gap_count > 0:
+                window_list_new.pop()
+                gap_count -= 1
+
+    return window_list_new
+
+
+
+
 def calculate_window_score(reads_in_window, lambdaa, l0):
     # sometimes 0 and therefore inf in -log  is generated
     if reads_in_window >= l0:
@@ -102,6 +169,8 @@ def calculate_window_score(reads_in_window, lambdaa, l0):
     else:
         window_score = 0
     return window_score
+
+
 
 
 def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, island_score_threshold):

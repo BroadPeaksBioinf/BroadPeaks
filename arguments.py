@@ -41,13 +41,14 @@ def make_log(input_path, log_flag):
     logging.getLogger('').addHandler(console)
 
 def check_control(control_path):
-    if not os.path.isfile(control_path):
-        logging.error("No control BAM file specified in input '{}' or there is no such a file".format(control_path))
-        sys.exit("`{}` is not a path to BAM file. \n More information in LOG file for this run".format(control_path))
-    if control_path[-4:] != '.bam':
-        logging.error("`{}` is other file type, not BAM. This tool works only with BAM-files as control input (*.bam)".
-                      format(control_path))
-        sys.exit("`{}` is not a BAM file. \n More information in `{}`".format(control_path))
+    if control_path != "none":
+        if not os.path.isfile(control_path):
+            logging.error("No control BAM file specified in input '{}' or there is no such a file".format(control_path))
+            sys.exit("`{}` is not a path to BAM file. \n More information in LOG file for this run".format(control_path))
+        if control_path[-4:] != '.bam':
+            logging.error("`{}` is other file type, not BAM. This tool works only with BAM-files as control input (*.bam)".
+                          format(control_path))
+            sys.exit("`{}` is not a BAM file. \n More information in `{}`".format(control_path))
     return control_path
 
 def check_p_value(p0):
@@ -67,9 +68,9 @@ def check_effective_proportion(effective_proportion):
 
 def check_outfile(output_dir, output_name, input_path):
     if not output_dir:
-        os.makedirs(output_dir)
+        output_dir = os.path.dirname(input_path)
     if not output_name:
-        output_name = os.path.basename(input_path)[:-4] + "_peaks"
+         output_name = os.path.basename(input_path)[:-4] + "_peaks"
     # must test validity of output_name as filename
     outfile = output_dir + "/" + output_name + ".bed"
     return outfile

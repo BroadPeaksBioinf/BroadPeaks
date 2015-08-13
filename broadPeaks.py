@@ -34,7 +34,7 @@ parser.add_argument('-n', dest="output_name", help="Specify output name. "
 parser.add_argument('-e', help="Proportion of effective genome length; has to be in range(0.0, 1.0) DEFAULT: 0.77",
                     type=float, default=0.77)
 parser.add_argument('-c', dest='control', help="Path to `control.bam` file. DEFAULT: no control file",
-                    type=str)
+                    type=str, default= "none")
 parser.add_argument('--log', help="To see only current run LOG file. "
                                   "DEFAULT : LOG file contains information from all runs", action='store_true')
 # parser.add_argument('-p', dest='p_value', help="p-value; has to be in range(0.0, 1.0). DEFAULT: 0.01", type=float, default=0.01)
@@ -60,12 +60,13 @@ GAP = args.gap
 EFFECTIVE_PROPORTION = arguments.check_effective_proportion(args.e)
 ISLAND_SCORE_THRESHOLD = args.threshold
 outfile = arguments.check_outfile(args.outdir, args.output_name, bamPath)
-# controlPath = arguments.check_control(args.control)
+controlPath = arguments.check_control(args.control)
 # p0 = arguments.check_p_value(args.p_value)
 p0 = 0.01
 
 # main_functions
 chromosomes_info = pre_counting.get_chromosomes_info(bamPath)
+
 
 logging.info("\nStep 1 of 4\nCOUNTING UNIQUE READS\n")
 total_unique_reads_count = pre_counting.count_unique_reads(bamPath, chromosomes_info)
@@ -76,7 +77,6 @@ effective_length = pre_counting.count_effective_length(EFFECTIVE_PROPORTION, chr
 lambdaa = pre_counting.count_lambda(total_unique_reads_count, WINDOW_SIZE, effective_length)
 # Minimum #reads in a window for eligibility
 # Formula (1), finding l0
-# Must make more clear variable name
 l0 = scipy.stats.poisson.ppf(1 - p0, lambdaa)
 logging.info("\nWindow read threshold is {} reads, \ni.e. {} is minimum number of reads in window "
              "to consider this window `eligible` with Poisson distribution p-value {}".format(l0, l0, p0))
