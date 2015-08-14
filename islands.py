@@ -221,3 +221,61 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
     logging.info("There are {} islands found".format(len(islands_list)))
     print(zero_score_islands)
     return islands_list
+
+
+
+island_list = [[0,1,5], [0,10,12], [0,14,15],[0,16,17], [0,25,27], [0,100,101], [0,200,201],[0,1000,1001]]
+island_list_2 = [[0,1,2], [0,6,7], [0,8,9], [0,11,12], [0,14,15], [0, 99,102],[0,500,501]]
+
+def find_unintersected_islands(island_list, island_list_2):
+    final_islands = []
+    intersection_count = 0
+    false_positives_count = 0
+    i = 0
+    second_island_beginning = island_list_2[i][1]
+    second_island_end = island_list_2[i][2]
+
+    for island in island_list:
+        first_island_beginning = island[1]
+        first_island_end = island[2]
+
+        if second_island_beginning > first_island_end:
+            final_islands.append(island)
+
+            continue
+        if i>=len(island_list_2)-1:
+            final_islands.append(island)
+            continue
+
+        while True:
+            if i>=len(island_list_2):
+                break
+            if second_island_beginning > first_island_end:
+                break
+            second_island_beginning = island_list_2[i][1]
+            second_island_end = island_list_2[i][2]
+
+            if (second_island_end < first_island_beginning):
+                i +=1
+                false_positives_count += 1
+            # intersection condition
+            elif((second_island_beginning>=first_island_beginning) and (second_island_beginning<=first_island_end)) or\
+                    ((second_island_end>=first_island_beginning) and (second_island_end<=first_island_end)) or ((second_island_beginning<first_island_beginning) and (second_island_end>first_island_end)):
+                intersection_count += 1
+                i+=1
+            #if second_island_end <
+            print(false_positives_count)
+            print(intersection_count)
+            print(i)
+
+
+
+    print(false_positives_count)
+    print(intersection_count)
+    print(i)
+
+    return (final_islands)
+
+final_i = find_unintersected_islands(island_list, island_list_2)
+print(final_i)
+
