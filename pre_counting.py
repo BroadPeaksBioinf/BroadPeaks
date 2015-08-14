@@ -25,6 +25,7 @@ def get_chromosomes_info(bam_path):
 
 
 def count_unique_reads(bam_path, chromosomes_info):
+
     bamfile = pysam.AlignmentFile(bam_path, 'rb')
     total_reads_count = 0
     total_unique_reads_count = 0

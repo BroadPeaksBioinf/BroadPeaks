@@ -41,7 +41,7 @@ def make_log(input_path, log_flag):
     logging.getLogger('').addHandler(console)
 
 def check_control(control_path):
-    if control_path != "none":
+    if control_path != "unspecified":
         if not os.path.isfile(control_path):
             logging.error("No control BAM file specified in input '{}' or there is no such a file".format(control_path))
             sys.exit("`{}` is not a path to BAM file. \n More information in LOG file for this run".format(control_path))
