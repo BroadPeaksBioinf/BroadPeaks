@@ -21,7 +21,7 @@ def yield_all_reads_in_chromosome(chromosomes_info):
 # Sequences of ineligible windows longer than GAP+1 are not stored
 
 
-def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_reads_count):
+def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_reads_count, normalization_coef):
     logging.info("Making eligible windows of {} bp with allowed gap_size {} bp".format(window_size, window_size*gap))
     bamfile = pysam.AlignmentFile(bam_path, 'rb')
     window_list = []
@@ -59,6 +59,7 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
                     elif beginning_of_the_read < window_start:
                         break
                     else:
+                        window_reads_count = int(float(window_reads_count)*normalization_coef)
                         if window_reads_count < l0:
                             gap_count += 1
                         else:

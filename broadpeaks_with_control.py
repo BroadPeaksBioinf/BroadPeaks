@@ -39,11 +39,17 @@ def broadpeaks_with_control(bam_path, control_path, window_size, gap, EFFECTIVE_
 
 
     logging.info("\nStep 2 of 4\nMAKING WINDOW LIST\n")
-    window_list_temp = islands.make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, input_unique_reads_count)
-    window_list = islands.modify_window_list_based_on_control(control_path, chromosomes_info, l0, window_size, gap, input_unique_reads_count, control_unique_reads_count, window_list_temp)
+    NORMALIZATION_CONSTANT = float(input_unique_reads_count)/float(control_unique_reads_count)
+    window_list_input = islands.make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, input_unique_reads_count, NORMALIZATION_CONSTANT)
+    window_list_control = islands.make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, control_unique_reads_count, NORMALIZATION_CONSTANT)
+
+    #window_list = islands.modify_window_list_based_on_control(control_path, chromosomes_info, l0, window_size, gap, input_unique_reads_count, control_unique_reads_count, window_list_temp)
 
 
     logging.info("\nStep 3 of 4\nMAKING ISLAND LIST\n")
-    island_list = islands.make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, ISLAND_SCORE_THRESHOLD)
+    island_list_input = islands.make_islands_list(window_list_input, lambdaa, window_size, l0, chromosomes_info, ISLAND_SCORE_THRESHOLD)
+    island_list_control = islands.make_islands_list(window_list_control, lambdaa, window_size, l0, chromosomes_info, ISLAND_SCORE_THRESHOLD)
 
+
+    island_list = islands.find_unintersected_islands(island_list_input,island_list_control)
     return(island_list)

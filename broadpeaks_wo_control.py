@@ -39,7 +39,7 @@ def broadpeaks_wo_control(bam_path,WINDOW_SIZE, GAP, EFFECTIVE_PROPORTION, ISLAN
                  "to consider this window `eligible` with Poisson distribution p-value {}".format(l0, l0, p0))
 
     logging.info("\nStep 2 of 4\nMAKING WINDOW LIST\n")
-    window_list = islands.make_windows_list(bam_path, chromosomes_info, l0, WINDOW_SIZE, GAP, input_unique_reads_count)
+    window_list = islands.make_windows_list(bam_path, chromosomes_info, l0, WINDOW_SIZE, GAP, input_unique_reads_count, 1)
 
 
     logging.info("\nStep 3 of 4\nMAKING ISLAND LIST\n")
