@@ -225,63 +225,90 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
 
 
 
-#island_list = [[0,1,5], [0,10,12], [0,14,15],[0,16,17], [0,25,27], [0,100,101], [0,200,201],[0,1000,1001],[0,1000000,10000001]]
-#island_list_2 = [[0,1,2], [0,6,7], [0,8,9], [0,11,12], [0,14,15], [0, 99,102],[0,500,501],[0,1002,1003],[0,1005,1006],[0,1007,1008]]
+
+#island_list = [[0,1,5], [0,10,12], [0,14,15],[0,16,17],[1,1,5], [1,10,12], [1,14,15],[1,16,17]]
+#island_list_2 = [[0,1,5], [0,10,12], [0,14,15],[0,16,17], [1,10,12], [1,14,15],[1,16,17]]
+
+#island_list_2 = [[0,1,2], [0,6,7], [0,8,9], [0,11,12], [0,14,15], [0, 99,102],[0,500,501],[0,1002,1003],[0,1005,1006],[0,1007,1008],[1,1,2], [1,6,7], [1,8,9], [0,11,12], [0,14,15], [0, 99,102],[0,500,501],[0,1002,1003],[0,1005,1006],[0,1007,1008]]
 
 def find_unintersected_islands(island_list, island_list_2):
+    diff = lambda l1,l2: [x for x in l1 if x not in l2]
 
-    final_islands = []
+    intersection_islands = []
     i = 0
     second_island_beginning = island_list_2[i][1]
     second_island_end = island_list_2[i][2]
+
+    chrom_name_old_first_isl = island_list[0][0]
     # whole second island before first island flag
     flag = 0
 
+
+
     for (j,island) in enumerate(island_list):
-        intersection_flag = 0
+
+        # if no more islands in control are left
+        if i>=len(island_list_2):
+            continue
+        # check the chromosome change:
         first_island_beginning = island[1]
         first_island_end = island[2]
-        #print(first_island_beginning,first_island_end,second_island_beginning,second_island_end)
 
-        if i>=len(island_list_2)-1:
-            final_islands.append(island)
-            continue
+        # chrom names for chromosome switching
+        chrom_name_current_first_isl = island[0]
+        chrom_name_current_second_isl = island_list_2[i][0]
 
-        if second_island_beginning > first_island_end:
-            final_islands.append(island)
-            continue
+        if flag == 1:
+            if chrom_name_current_first_isl != chrom_name_old_first_isl:
+                chrom_name_old_first_isl = chrom_name_current_first_isl
+                flag = 0
+            else:
+                continue
+        # chromosome in first island list changes
+        if chrom_name_current_first_isl != chrom_name_old_first_isl:
+            chrom_name_old_first_isl = chrom_name_current_first_isl
+            first_island_beginning = 0
+            first_island_end = 0
+            second_island_beginning = 0
+            second_island_end = 0
+            # go to next second island until chr names match
+            while True:
+                if ((chrom_name_current_second_isl == chrom_name_current_first_isl)) or (i>= len(island_list_2)-1):
+                    break
+                else:
+                    i+=1
+                    chrom_name_current_second_isl = island_list_2[i][0]
+
+
+
 
 
         while True:
             if i>=len(island_list_2):
                 break
-            if second_island_beginning > first_island_end:
+
+            chrom_name_current_second_isl = island_list_2[i][0]
+            if chrom_name_current_second_isl != chrom_name_current_first_isl:
                 flag = 1
                 break
+
+
             second_island_beginning = island_list_2[i][1]
             second_island_end = island_list_2[i][2]
-            #print(first_island_beginning,first_island_end,second_island_beginning,second_island_end)
-
-            if (second_island_end < first_island_beginning):
-                flag = 0
+            # Evaluating second vs first island positions
+            if((second_island_beginning>=first_island_beginning) and (second_island_beginning<=first_island_end)) or\
+                        ((second_island_end>=first_island_beginning) and (second_island_end<=first_island_end)) or \
+                        ((second_island_beginning<first_island_beginning) and (second_island_end>first_island_end)):
+                    intersection_islands.append(island)
+                    i+=1
+            elif (second_island_end < first_island_beginning):
                 i +=1
-            # intersection condition
-            elif((second_island_beginning>=first_island_beginning) and (second_island_beginning<=first_island_end)) or\
-                    ((second_island_end>=first_island_beginning) and (second_island_end<=first_island_end)) or \
-                    ((second_island_beginning<first_island_beginning) and (second_island_end>first_island_end)):
-                intersection_flag = 1
-                i+=1
-
-        if flag == 1 and intersection_flag == 0:
-            final_islands.append(island)
-            flag = 0
-        intersection_flag = 0
-
-        if i>=len(island_list_2)-1:
-            final_islands.append(island)
-            continue
-
+            elif (second_island_beginning > first_island_end):
+                break
+    print("done")
+    final_islands = diff(island_list,intersection_islands)
     return (final_islands)
+
 
 #final_i = find_unintersected_islands(island_list, island_list_2)
 #print(final_i)
