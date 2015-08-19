@@ -314,6 +314,7 @@ def find_unintersected_islands(island_list, island_list_2):
                         ((second_island_beginning<first_island_beginning) and (second_island_end>first_island_end)):
                     intersection_islands.append(island)
                     i+=1
+                    break
             elif (second_island_end < first_island_beginning):
                 i +=1
             elif (second_island_beginning > first_island_end):
