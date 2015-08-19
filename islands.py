@@ -225,14 +225,27 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
 
 
 
+def diff(island_list, island_list_2):
+    i = 0
+    final_islands = []
+    for island in island_list_2:
 
-#island_list = [[0,1,5], [0,10,12], [0,14,15],[0,16,17],[1,1,5], [1,10,12], [1,14,15],[1,16,17]]
-#island_list_2 = [[0,1,5], [0,10,12], [0,14,15],[0,16,17], [1,10,12], [1,14,15],[1,16,17]]
+        while i< len(island_list):
+            if island_list[i] != island:
+                final_islands.append(island_list[i])
+                i+=1
+            else:
+                i+=1
+                break
+    while i< len(island_list):
+            final_islands.append(island_list[i])
+            i+=1
+    return(final_islands)
 
-#island_list_2 = [[0,1,2], [0,6,7], [0,8,9], [0,11,12], [0,14,15], [0, 99,102],[0,500,501],[0,1002,1003],[0,1005,1006],[0,1007,1008],[1,1,2], [1,6,7], [1,8,9], [0,11,12], [0,14,15], [0, 99,102],[0,500,501],[0,1002,1003],[0,1005,1006],[0,1007,1008]]
+
 
 def find_unintersected_islands(island_list, island_list_2):
-    diff = lambda l1,l2: [x for x in l1 if x not in l2]
+
 
     intersection_islands = []
     i = 0
@@ -305,11 +318,18 @@ def find_unintersected_islands(island_list, island_list_2):
                 i +=1
             elif (second_island_beginning > first_island_end):
                 break
-    print("done")
     final_islands = diff(island_list,intersection_islands)
+
     return (final_islands)
 
 
-#final_i = find_unintersected_islands(island_list, island_list_2)
-#print(final_i)
+
+
+island_list = [[0,1,5], [0,10,12], [0,14,15],[0,16,17],[1,1,5], [1,10,12], [1,14,15],[1,16,17]]
+island_list_2 = [[0,1,5], [0,10,12], [0,14,15],[0,16,17],[1,1,5], [1,10,12], [1,14,15],[1,16,17]]
+
+#island_list_2 = [[0,1,2], [0,6,7], [0,8,9], [0,11,12], [0,14,15], [0, 99,102],[0,500,501],[0,1002,1003],[0,1005,1006],[0,1007,1008],[1,1,2], [1,6,7], [1,8,9], [0,11,12], [0,14,15], [0, 99,102],[0,500,501],[0,1002,1003],[0,1005,1006],[0,1007,1008]]
+
+final_i = find_unintersected_islands(island_list, island_list_2)
+print(final_i)
 
