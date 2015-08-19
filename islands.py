@@ -5,17 +5,6 @@ import scipy
 import pysam
 import logging
 
-"""
-This code repeats, maybe function like this may help.
-
-def yield_all_reads_in_chromosome(chromosomes_info):
-     for chromosome in chromosomes_info:
-        beginning_of_the_previous_read = 0
-        current_chromosome_name = chromosome[0]
-        # currentChromosomeSize = int(chromosome[1])
-        all_reads_in_chromosome = bamfile.fetch(current_chromosome_name)
-        yield all_reads_in_chromosome
-"""
 # Makes a simple list of windows, where each window is a list [WindowStart, ReadsInWindow].
 # Chromosomes are separated by [-1,-1] window
 # Sequences of ineligible windows longer than GAP+1 are not stored
@@ -93,7 +82,7 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
 
 
 
-
+# unused function for the other method of accounting for control
 def modify_window_list_based_on_control(control_path, chromosomes_info, l0, window_size, gap, unique_reads_count, control_unique_reads_count, window_list_wo_control):
     logging.info("Making window list based on control")
     bamfile = pysam.AlignmentFile(control_path, 'rb')
@@ -173,7 +162,6 @@ def calculate_window_score(reads_in_window, lambdaa, l0):
 
 
 
-
 def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, island_score_threshold):
     chromosome_counter = 0
     current_chromosome_name = chromosomes_info[chromosome_counter][0]
@@ -192,7 +180,17 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
 
         # New chromosome check: [-1  -1] window separates chomosomes.
         if window_start_new == -1:
+            # append the previous island
+            islands_list.append([current_chromosome_name, island_start,
+                                    window_start + window_size, island_score, island_number_of_reads, island_length - island_number_of_gaps, island_number_of_gaps])
+
+            # reset parameters for the new island
             window_start = window_list[i + 1][0] - window_size
+            island_start = window_list[i + 1][0] - window_size
+            island_score = 0
+            island_number_of_reads = 0
+            island_number_of_gaps = 0
+
             chromosome_counter += 1
             # switch the chromosome name to next one
             if chromosome_counter < len(chromosomes_info):
@@ -225,11 +223,14 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
 
 
 
+# diff function returns difference between two island lists, ie islands that are in the first list but not in the second.
+# both lists are assumed to be sorted by chromosome and by island_start
 def diff(island_list, island_list_2):
     i = 0
     final_islands = []
+    # iterate through 2nd list, which is a subset of first
     for island in island_list_2:
-
+        # if islands don't match, final result will contain the island from the first list
         while i< len(island_list):
             if island_list[i] != island:
                 final_islands.append(island_list[i])
@@ -237,6 +238,7 @@ def diff(island_list, island_list_2):
             else:
                 i+=1
                 break
+    # some islands from the first list may be left after the iteration through second list is over. we append them to the result as well.
     while i< len(island_list):
             final_islands.append(island_list[i])
             i+=1
@@ -244,8 +246,8 @@ def diff(island_list, island_list_2):
 
 
 
+# first identifies intersecting islands and then uses diff function to find UNintersected islands
 def find_unintersected_islands(island_list, island_list_2):
-
 
     intersection_islands = []
     i = 0
@@ -256,17 +258,17 @@ def find_unintersected_islands(island_list, island_list_2):
     # whole second island before first island flag
     flag = 0
 
-
-
     for (j,island) in enumerate(island_list):
 
         # if no more islands in control are left
         if i>=len(island_list_2):
             continue
-        # check the chromosome change:
+
         first_island_beginning = island[1]
         first_island_end = island[2]
 
+
+        # check the chromosome change:
         # chrom names for chromosome switching
         chrom_name_current_first_isl = island[0]
         chrom_name_current_second_isl = island_list_2[i][0]
@@ -280,10 +282,6 @@ def find_unintersected_islands(island_list, island_list_2):
         # chromosome in first island list changes
         if chrom_name_current_first_isl != chrom_name_old_first_isl:
             chrom_name_old_first_isl = chrom_name_current_first_isl
-            first_island_beginning = 0
-            first_island_end = 0
-            second_island_beginning = 0
-            second_island_end = 0
             # go to next second island until chr names match
             while True:
                 if ((chrom_name_current_second_isl == chrom_name_current_first_isl)) or (i>= len(island_list_2)-1):
@@ -292,14 +290,11 @@ def find_unintersected_islands(island_list, island_list_2):
                     i+=1
                     chrom_name_current_second_isl = island_list_2[i][0]
 
-
-
-
-
         while True:
             if i>=len(island_list_2):
                 break
 
+            # Chromosome change happens while we iterate through islands from the second list
             chrom_name_current_second_isl = island_list_2[i][0]
             if chrom_name_current_second_isl != chrom_name_current_first_isl:
                 flag = 1
@@ -308,29 +303,22 @@ def find_unintersected_islands(island_list, island_list_2):
 
             second_island_beginning = island_list_2[i][1]
             second_island_end = island_list_2[i][2]
-            # Evaluating second vs first island positions
+
+            # Evaluating second list vs first list  island positions
+
+            # Intersection condition: this one can be easily changed if needed
             if((second_island_beginning>=first_island_beginning) and (second_island_beginning<=first_island_end)) or\
                         ((second_island_end>=first_island_beginning) and (second_island_end<=first_island_end)) or \
                         ((second_island_beginning<first_island_beginning) and (second_island_end>first_island_end)):
                     intersection_islands.append(island)
                     i+=1
                     break
+            # Intersection condition is not satisfied and whole second island is before whole first one: take next second island
             elif (second_island_end < first_island_beginning):
                 i +=1
+            # Intersection condition is not satisfied and whole second island is before whole first one: break and take next first island
             elif (second_island_beginning > first_island_end):
                 break
     final_islands = diff(island_list,intersection_islands)
 
     return (final_islands)
-
-
-
-
-island_list = [[0,1,5], [0,10,12], [0,14,15],[0,16,17],[1,1,5], [1,10,12], [1,14,15],[1,16,17]]
-island_list_2 = [[0,1,5], [0,10,12], [0,14,15],[0,16,17],[1,1,5], [1,10,12], [1,14,15],[1,16,17]]
-
-#island_list_2 = [[0,1,2], [0,6,7], [0,8,9], [0,11,12], [0,14,15], [0, 99,102],[0,500,501],[0,1002,1003],[0,1005,1006],[0,1007,1008],[1,1,2], [1,6,7], [1,8,9], [0,11,12], [0,14,15], [0, 99,102],[0,500,501],[0,1002,1003],[0,1005,1006],[0,1007,1008]]
-
-final_i = find_unintersected_islands(island_list, island_list_2)
-print(final_i)
-
