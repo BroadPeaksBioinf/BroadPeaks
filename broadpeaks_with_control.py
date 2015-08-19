@@ -50,6 +50,10 @@ def broadpeaks_with_control(bam_path, control_path, window_size, gap, EFFECTIVE_
     island_list_input = islands.make_islands_list(window_list_input, lambdaa, window_size, l0, chromosomes_info, ISLAND_SCORE_THRESHOLD)
     island_list_control = islands.make_islands_list(window_list_control, lambdaa, window_size, l0, chromosomes_info, ISLAND_SCORE_THRESHOLD)
 
-
     island_list = islands.find_unintersected_islands(island_list_input,island_list_control)
+
+    # calculate FDR
+    FDR = (len(island_list_control) - (len(island_list_input)-len(island_list)))/len(island_list)
+    logging.info("\nFDR is {} reads, \n".format(FDR))
+
     return(island_list)
