@@ -23,7 +23,7 @@ def get_chromosomes_info(bam_path):
     # Last line is unmapped reads, we don't need them
         chromosomes_info.pop()
     except:
-        logging.error("\nPROBLEM WITH BAM FILE.\nYour BAM file {} probably is not sorted."
+        logging.error("\nPROBLEM WITH BAM FILE OR pysam.idxstats() COMMAND\nYour BAM file {} probably is not sorted."
                       "\n\nTo sort it with samtools use comand: \n'samtools sort {} {}'"
                       .format(bam_path, bam_path, bam_path[:-3] + 'sorted'))
         sys.exit(1)
@@ -72,7 +72,7 @@ def count_unique_reads(bam_path, chromosomes_info):
     if len(all_read_length) == 1:
         logging.info("\nAverage read length {} bp".format(all_read_length.pop()))
     else:
-        logging.warn('\nVariable read length')
+        logging.warn('\nVariable read length {} bp'.format([_ for _ in all_read_length]))
     logging.info("Library depth: there are {} unique reads out of {}.\nIn other words {} % of reads are unique".
                  format(total_unique_reads_count, total_reads_count,
                         round(float(total_unique_reads_count)/float(total_reads_count)*100, 1)))

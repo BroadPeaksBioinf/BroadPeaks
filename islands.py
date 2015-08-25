@@ -161,7 +161,6 @@ def calculate_window_score(reads_in_window, lambdaa, l0):
     return window_score
 
 
-
 def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, island_score_threshold):
     chromosome_counter = 0
     current_chromosome_name = chromosomes_info[chromosome_counter][0]
