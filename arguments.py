@@ -5,7 +5,6 @@ import logging
 import os.path
 import colorized_log
 
-"""I see this help"""
 
 def check_input(input_path):
     """
@@ -27,11 +26,11 @@ def make_log(input_path, log_flag):
     log_path = os.path.dirname(input_path) + "/" + os.path.basename(input_path)[:-4] + "_log.log"
     if log_flag:
         logging.basicConfig(filename=log_path, level=logging.DEBUG,
-                       format='%(asctime)s : %(levelname)s : %(message)s', datefmt='%m/%d/%Y %H:%M:%S',
-                       filemode='w')
+                            format='%(asctime)s : %(levelname)s : %(message)s', datefmt='%m/%d/%Y %H:%M:%S',
+                            filemode='w')
     else:
         logging.basicConfig(filename=log_path, level=logging.DEBUG,
-                    format='%(asctime)s : %(levelname)s : %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
+                            format='%(asctime)s : %(levelname)s : %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
     console = logging.StreamHandler()
     console.setLevel(logging.INFO)
     # formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
@@ -39,6 +38,7 @@ def make_log(input_path, log_flag):
     formatter = colorized_log.ColoredFormatter('%(message)s')
     console.setFormatter(formatter)
     logging.getLogger('').addHandler(console)
+
 
 def check_control(control_path):
     if control_path != "unspecified":
@@ -50,6 +50,7 @@ def check_control(control_path):
                           format(control_path))
             sys.exit("`{}` is not a BAM file. \n More information in `{}`".format(control_path))
     return control_path
+
 
 def check_p_value(p0):
     if p0 <= 0 or p0 >= 1:

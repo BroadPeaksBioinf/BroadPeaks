@@ -1,6 +1,4 @@
-__author__ = 'dima'
-
-
+#!/usr/bin/env/ python
 
 import sys
 import numpy
@@ -17,9 +15,7 @@ import islands
 import output
 
 
-
-
-def broadpeaks_wo_control(bam_path,WINDOW_SIZE, GAP, EFFECTIVE_PROPORTION, ISLAND_SCORE_THRESHOLD, p0):
+def broadpeaks_wo_control(bam_path, WINDOW_SIZE, GAP, EFFECTIVE_PROPORTION, ISLAND_SCORE_THRESHOLD, p0):
 
     chromosomes_info = pre_counting.get_chromosomes_info(bam_path)
 
@@ -39,10 +35,11 @@ def broadpeaks_wo_control(bam_path,WINDOW_SIZE, GAP, EFFECTIVE_PROPORTION, ISLAN
                  "to consider this window `eligible` with Poisson distribution p-value {}".format(l0, l0, p0))
 
     logging.info("\nStep 2 of 4\nMAKING WINDOW LIST\n")
-    window_list = islands.make_windows_list(bam_path, chromosomes_info, l0, WINDOW_SIZE, GAP, input_unique_reads_count, 1)
-
+    window_list = islands.make_windows_list(bam_path, chromosomes_info, l0, WINDOW_SIZE, GAP,
+                                            input_unique_reads_count, 1)
 
     logging.info("\nStep 3 of 4\nMAKING ISLAND LIST\n")
-    island_list = islands.make_islands_list(window_list, lambdaa, WINDOW_SIZE, l0, chromosomes_info, ISLAND_SCORE_THRESHOLD)
+    island_list = islands.make_islands_list(window_list, lambdaa, WINDOW_SIZE, l0, chromosomes_info,
+                                            ISLAND_SCORE_THRESHOLD)
 
-    return (island_list)
+    return island_list

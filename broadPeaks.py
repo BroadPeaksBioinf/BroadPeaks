@@ -35,7 +35,7 @@ parser.add_argument('-n', dest="output_name", help="Specify output name. "
 parser.add_argument('-e', help="Proportion of effective genome length; has to be in range(0.0, 1.0) DEFAULT: 0.77",
                     type=float, default=0.77)
 parser.add_argument('-c', dest='control', help="Path to `control.bam` file. DEFAULT: no control file",
-                    type=str, default= "unspecified")
+                    type=str, default="unspecified")
 parser.add_argument('--log', help="To see only current run LOG file. "
                                   "DEFAULT : LOG file contains information from all runs", action='store_true')
 # parser.add_argument('-p', dest='p_value', help="p-value; has to be in range(0.0, 1.0). DEFAULT: 0.01", type=float, default=0.01)
@@ -50,7 +50,7 @@ bam_path = "/home/dima/BAMfiles/Bernstein_H1_hESC_CTCF.bam"
 '/home/yegor/Alex_project/H3K4me3.bam'
 """
 # args as list of strings
-#args = parser.parse_args(['/home/yegor/Alex_project/H3K4me3.bam'])
+# args = parser.parse_args(['/home/yegor/Alex_project/H3K4me3.bam'])
 # ["/home/user/SICERproj/BAMfiles/H3K4Me3_test.bam"
 args = parser.parse_args()
 
@@ -67,10 +67,11 @@ p0 = 0.1
 
 # main_functions
 if control_path == "unspecified":
-    island_list = broadpeaks_wo_control.broadpeaks_wo_control(bam_path,WINDOW_SIZE, GAP, EFFECTIVE_PROPORTION, ISLAND_SCORE_THRESHOLD, p0)
+    island_list = broadpeaks_wo_control.broadpeaks_wo_control(bam_path, WINDOW_SIZE, GAP,
+                                                              EFFECTIVE_PROPORTION, ISLAND_SCORE_THRESHOLD, p0)
 else:
-    island_list = broadpeaks_with_control.broadpeaks_with_control(bam_path,control_path, WINDOW_SIZE, GAP, EFFECTIVE_PROPORTION, ISLAND_SCORE_THRESHOLD, p0)
-
+    island_list = broadpeaks_with_control.broadpeaks_with_control(bam_path, control_path, WINDOW_SIZE, GAP,
+                                                                  EFFECTIVE_PROPORTION, ISLAND_SCORE_THRESHOLD, p0)
 
 
 logging.info("\nStep 4 of 4\nWRITING FOUND ISLANDS TO `{}` BED FILE\n".format(outfile))
