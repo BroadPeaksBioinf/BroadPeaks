@@ -3,6 +3,7 @@
 import logging
 import os.path
 import pysam
+import sys
 
 
 def get_chromosomes_info(bam_path):
@@ -16,10 +17,16 @@ def get_chromosomes_info(bam_path):
     logging.info('Collecting information about sample from .bai file: '
                  '[ref.seq. name, ref.seq. length, number of mapped and unmapped reads]')
     logging.info("\nGenome ID {} \nEstimated mappability {}".format('?', '?'))
-    for chr in pysam.idxstats(bam_path):
-        chromosomes_info.append(chr.split("\t")[:-1])
+    try:
+        for chr in pysam.idxstats(bam_path):
+            chromosomes_info.append(chr.split("\t")[:-1])
     # Last line is unmapped reads, we don't need them
-    chromosomes_info.pop()
+        chromosomes_info.pop()
+    except:
+        logging.error("\nPROBLEM WITH BAM FILE.\nYour BAM file {} probably is not sorted."
+                      "\n\nTo sort it with samtools use comand: \n'samtools sort {} {}'"
+                      .format(bam_path, bam_path, bam_path[:-3] + 'sorted'))
+        sys.exit(1)
     # print(chromosomes_info)
     return chromosomes_info
 
