@@ -1,4 +1,4 @@
-#!/usr/bin/env/ python
+#!/usr/bin/env python
 import logging
 
 
@@ -9,7 +9,7 @@ def write_output(outfile, island_list, island_score_threshold):
                  "island_number_of_eligible_windows\tnumber_of_gaps_in_the_island'")
     for island in island_list:
         if island[3] >= island_score_threshold:
-            island_string = '\t'.join([str(_) for _ in island])
+            island_string = '\t'.join([str(_) for _ in island]) + '\n'
 # str(island[0]) + "\t" + str(island[1]) + "\t" + str(island[2]) + "\t" + str(island[3]) + "\t" + str(island[4]) + "\t" + str(island[5])+ "\t" + str(island[6]) + "\n"
             f.write(island_string)
     # print(island_list[11104])
