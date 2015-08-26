@@ -36,8 +36,15 @@ parser.add_argument('-e', help="Proportion of effective genome length; has to be
                     type=float, default=0.77)
 parser.add_argument('-c', dest='control', help="Path to `control.bam` file. DEFAULT: no control file",
                     type=str, default="unspecified")
-parser.add_argument('--log', help="To see only current run LOG file. "
-                                  "DEFAULT : LOG file contains information from all runs", action='store_true')
+parser.add_argument('-log_name', help="Specify LOG file name."
+                                       "DEFAULT : `input_log.log`", type=str, default="")
+parser.add_argument('-log_dir', help="Specify path to directory where to write LOG file."
+                                       "DEFAULT : log file will be in the same directory as `input.bam`",
+                    type=str, default="")
+parser.add_argument('--merge_log', help="Merge logs from all runs in one LOG file. "
+                                  "DEFAULT : LOG file contains information only from the last run", action='store_true')
+parser.add_argument('--stop_verbosity', help="Stops printing logs to terminal, just to LOG file", action='store_true')
+
 # parser.add_argument('-p', dest='p_value', help="p-value; has to be in range(0.0, 1.0). DEFAULT: 0.01", type=float, default=0.01)
 # parser.add_argument('-ref', dest='reference genome', help="Reference genome.  DEFAULT: 'hg19'", type=str, default='hg19')
 
@@ -52,10 +59,10 @@ bam_path = "/home/dima/BAMfiles/Bernstein_H1_hESC_CTCF.bam"
 # args as list of strings
 # args = parser.parse_args(['/media/user/DISK1/SICER_project/Inputs_mouse/GSM1288312.bam'])
 # ["/home/user/SICERproj/BAMfiles/H3K4Me3_test.bam"
-args = parser.parse_args()
+args = parser.parse_args(['/media/user/DISK1/SICER_project/BAM_files/H3K4Me3_test.bam'])
 
 bam_path = arguments.check_input(args.infile)
-arguments.make_log(bam_path, args.log)
+arguments.make_log(bam_path, args.log_dir, args.log_name, args.merge_log, args.stop_verbosity)
 WINDOW_SIZE = args.window_size
 GAP = args.gap
 EFFECTIVE_PROPORTION = arguments.check_effective_proportion(args.e)
@@ -64,6 +71,7 @@ outfile = arguments.check_outfile(args.outdir, args.output_name, bam_path)
 control_path = arguments.check_control(args.control)
 # p0 = arguments.check_p_value(args.p_value)
 p0 = 0.1
+
 
 # main_functions
 if control_path == "unspecified":
@@ -78,4 +86,4 @@ logging.info("\nStep 4 of 4\nWRITING FOUND ISLANDS TO `{}` BED FILE\n".format(ou
 output.write_output(outfile, island_list, ISLAND_SCORE_THRESHOLD)
 
 
-print("Finished. Elapsed time, minutes: " + str((time.time() - startTime) / 60))
+logging.info("Finished. Elapsed time, minutes: " + str((time.time() - startTime) / 60))

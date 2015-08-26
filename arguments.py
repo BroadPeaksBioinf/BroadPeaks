@@ -21,23 +21,38 @@ def check_input(input_path):
     return input_path
 
 
-def make_log(input_path, log_flag):
+def make_log(input_path, log_dir, log_name, merge_log, stop_verbosity):
     # log_path = input_path[:-4]
-    log_path = os.path.dirname(input_path) + "/" + os.path.basename(input_path)[:-4] + "_log.log"
-    if log_flag:
+    # specifying directory and name of LOG file
+    if log_name:
+        if os.path.isdir(log_dir):
+            log_path = log_dir + "/" + log_name + ".log"
+        else:
+            log_path = os.path.dirname(input_path) + "/" + log_name + ".log"
+    else:
+        if os.path.isdir(log_dir):
+            log_path = log_dir + "/" + os.path.basename(input_path)[:-4] + "_log.log"
+        else:
+            log_path = os.path.dirname(input_path) + "/" + os.path.basename(input_path)[:-4] + "_log.log"
+    # making log file
+    if merge_log:
+        logging.basicConfig(filename=log_path, level=logging.DEBUG,
+                            format='%(asctime)s : %(levelname)s : %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
+        logging.debug("NEW RUN STARTS HERE\n\n")
+    else:
         logging.basicConfig(filename=log_path, level=logging.DEBUG,
                             format='%(asctime)s : %(levelname)s : %(message)s', datefmt='%m/%d/%Y %H:%M:%S',
                             filemode='w')
-    else:
-        logging.basicConfig(filename=log_path, level=logging.DEBUG,
-                            format='%(asctime)s : %(levelname)s : %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
-    console = logging.StreamHandler()
-    console.setLevel(logging.INFO)
+    # deciding whether to print logs to console
+    if not stop_verbosity:
+        console = logging.StreamHandler()
+        console.setLevel(logging.INFO)
     # formatter = logging.Formatter('%(name)-12s: %(levelname)-8s %(message)s')
     # console.setFormatter(formatter)
-    formatter = colorized_log.ColoredFormatter('%(message)s')
-    console.setFormatter(formatter)
-    logging.getLogger('').addHandler(console)
+        formatter = colorized_log.ColoredFormatter('%(message)s')
+        console.setFormatter(formatter)
+        logging.getLogger('').addHandler(console)
+    print ("\nLOG file for this run is here: \n{}\n".format(log_path))
 
 
 def check_control(control_path):
