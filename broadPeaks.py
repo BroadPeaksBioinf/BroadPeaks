@@ -60,7 +60,7 @@ bam_path = "/home/dima/BAMfiles/Bernstein_H1_hESC_CTCF.bam"
 # args as list of strings
 # args = parser.parse_args(['/media/user/DISK1/SICER_project/Inputs_mouse/GSM1288312.bam'])
 # ["/home/user/SICERproj/BAMfiles/H3K4Me3_test.bam"
-args = parser.parse_args(['/media/user/DISK1/SICER_project/BAM_files/H3K4Me3_test.bam', '-g', '2'])
+args = parser.parse_args()
 
 bam_path = arguments.check_input(args.infile)
 WINDOW_SIZE = args.window_size
