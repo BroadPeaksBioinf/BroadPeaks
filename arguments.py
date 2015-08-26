@@ -81,13 +81,13 @@ def check_effective_proportion(effective_proportion):
     return effective_proportion
 
 
-def check_outfile(output_dir, output_name, input_path):
+def check_outfile(output_dir, output_name, input_path, window_size, gap_size):
     if not output_dir:
         output_dir = os.path.dirname(input_path)
     if not output_name:
-         output_name = os.path.basename(input_path)[:-4] + "_peaks"
+        output_name = os.path.basename(input_path)[:-4] + "_W{}_G{}".format(window_size, window_size * gap_size)
     # must test validity of output_name as filename
-    outfile = output_dir + "/" + output_name + ".bed"
+    outfile = output_dir + "/" + output_name + "_peaks.bed"
     return outfile
 
 
@@ -98,7 +98,7 @@ def write_run_information(input_path, window_size, gap_size, island_score_thresh
     logging_string += "\n2. Window size :" + str(window_size) + " bp"
     if window_size == 200:
         logging_string += " (default)"
-    logging_string += "\n3. Gap size : {} bp".format(str(window_size * gap_size))
+    logging_string += "\n3. Gap size : {} bp".format(window_size * gap_size)
     if gap_size == 1:
         logging_string += " (default)"
     logging_string += "\n4. Island score threshold : {}".format(island_score_threshold)

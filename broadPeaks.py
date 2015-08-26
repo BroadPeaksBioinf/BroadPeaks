@@ -31,7 +31,8 @@ parser.add_argument('-o', dest='outdir', help="Path to directory for output `*_p
                                               "DEFAULT: output will be in the same directory as `input.bam`",
                     type=str)
 parser.add_argument('-n', dest="output_name", help="Specify output name. "
-                                                   "DEFAULT : an input file name + `_peaks.bed`", type=str)
+                                                   "DEFAULT : an input file name + "
+                                                   "`W<window size (bp)>_G<gap size (bp)>_peaks.bed`", type=str)
 parser.add_argument('-e', help="Proportion of effective genome length; has to be in range(0.0, 1.0) DEFAULT: 0.77",
                     type=float, default=0.77)
 parser.add_argument('-c', dest='control', help="Path to `control.bam` file. DEFAULT: no control file",
@@ -59,7 +60,7 @@ bam_path = "/home/dima/BAMfiles/Bernstein_H1_hESC_CTCF.bam"
 # args as list of strings
 # args = parser.parse_args(['/media/user/DISK1/SICER_project/Inputs_mouse/GSM1288312.bam'])
 # ["/home/user/SICERproj/BAMfiles/H3K4Me3_test.bam"
-args = parser.parse_args(['/media/user/DISK1/SICER_project/BAM_files/H3K4Me3_test.bam'])
+args = parser.parse_args(['/media/user/DISK1/SICER_project/BAM_files/H3K4Me3_test.bam', '-g', '2'])
 
 bam_path = arguments.check_input(args.infile)
 arguments.make_log(bam_path, args.log_dir, args.log_name, args.merge_log, args.stop_verbosity)
@@ -67,7 +68,7 @@ WINDOW_SIZE = args.window_size
 GAP = args.gap
 EFFECTIVE_PROPORTION = arguments.check_effective_proportion(args.e)
 ISLAND_SCORE_THRESHOLD = args.threshold
-outfile = arguments.check_outfile(args.outdir, args.output_name, bam_path)
+outfile = arguments.check_outfile(args.outdir, args.output_name, bam_path, WINDOW_SIZE, GAP)
 control_path = arguments.check_control(args.control)
 # p0 = arguments.check_p_value(args.p_value)
 p0 = 0.1
