@@ -38,7 +38,6 @@ def make_log(input_path, log_dir, log_name, merge_log, stop_verbosity):
     if merge_log:
         logging.basicConfig(filename=log_path, level=logging.DEBUG,
                             format='%(asctime)s : %(levelname)s : %(message)s', datefmt='%m/%d/%Y %H:%M:%S')
-        logging.debug("NEW RUN STARTS HERE\n\n")
     else:
         logging.basicConfig(filename=log_path, level=logging.DEBUG,
                             format='%(asctime)s : %(levelname)s : %(message)s', datefmt='%m/%d/%Y %H:%M:%S',
@@ -56,7 +55,7 @@ def make_log(input_path, log_dir, log_name, merge_log, stop_verbosity):
 
 
 def check_control(control_path):
-    if control_path != "unspecified":
+    if control_path != "":
         if not os.path.isfile(control_path):
             logging.error("No control BAM file specified in input '{}' or there is no such a file".format(control_path))
             sys.exit("`{}` is not a path to BAM file. \n More information in LOG file for this run".format(control_path))
@@ -90,3 +89,27 @@ def check_outfile(output_dir, output_name, input_path):
     # must test validity of output_name as filename
     outfile = output_dir + "/" + output_name + ".bed"
     return outfile
+
+
+def write_run_information(input_path, window_size, gap_size, island_score_threshold, effective_proportion,
+                          control_path, outfile):
+    logging_string = "You have started tool for ChiP-seq analysis to find broad peaks with following parameters:" \
+                     "\n\n1. Input file : {}".format(input_path)
+    logging_string += "\n2. Window size :" + str(window_size) + " bp"
+    if window_size == 200:
+        logging_string += " (default)"
+    logging_string += "\n3. Gap size : {} bp".format(str(window_size * gap_size))
+    if gap_size == 1:
+        logging_string += " (default)"
+    logging_string += "\n4. Island score threshold : {}".format(island_score_threshold)
+    if island_score_threshold == 0:
+        logging_string += " (default)"
+    logging_string += "\n5. Proportion of effective genome length : {}".format(effective_proportion)
+    if effective_proportion == 0.77:
+        logging_string += " (default)"
+    if control_path:
+        logging_string += "\n6. Control file : {}".format(control_path)
+    else:
+        logging_string += "\n6. Control file : not specified (default)"
+    logging_string += "\n7. Output file : {}".format(outfile)
+    logging.info(logging_string + "\n")

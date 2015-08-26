@@ -35,7 +35,7 @@ parser.add_argument('-n', dest="output_name", help="Specify output name. "
 parser.add_argument('-e', help="Proportion of effective genome length; has to be in range(0.0, 1.0) DEFAULT: 0.77",
                     type=float, default=0.77)
 parser.add_argument('-c', dest='control', help="Path to `control.bam` file. DEFAULT: no control file",
-                    type=str, default="unspecified")
+                    type=str, default="")
 parser.add_argument('-log_name', help="Specify LOG file name."
                                        "DEFAULT : `input_log.log`", type=str, default="")
 parser.add_argument('-log_dir', help="Specify path to directory where to write LOG file."
@@ -74,7 +74,9 @@ p0 = 0.1
 
 
 # main_functions
-if control_path == "unspecified":
+arguments.write_run_information(bam_path, WINDOW_SIZE, GAP, ISLAND_SCORE_THRESHOLD, EFFECTIVE_PROPORTION,
+                                control_path, outfile)
+if not control_path:
     island_list = broadpeaks_wo_control.broadpeaks_wo_control(bam_path, WINDOW_SIZE, GAP,
                                                               EFFECTIVE_PROPORTION, ISLAND_SCORE_THRESHOLD, p0)
 else:
