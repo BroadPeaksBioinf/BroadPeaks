@@ -21,7 +21,7 @@ def check_input(input_path):
     return input_path
 
 
-def make_log(input_path, log_dir, log_name, merge_log, stop_verbosity):
+def make_log(input_path, log_dir, log_name, merge_log, stop_verbosity, window_size, gap_size):
     # log_path = input_path[:-4]
     # specifying directory and name of LOG file
     if log_name:
@@ -31,9 +31,9 @@ def make_log(input_path, log_dir, log_name, merge_log, stop_verbosity):
             log_path = os.path.dirname(input_path) + "/" + log_name + ".log"
     else:
         if os.path.isdir(log_dir):
-            log_path = log_dir + "/" + os.path.basename(input_path)[:-4] + "_log.log"
+            log_path = log_dir + "/" + os.path.basename(input_path)[:-4] + "_W{}_G{}_log.log".format(window_size, gap_size * window_size)
         else:
-            log_path = os.path.dirname(input_path) + "/" + os.path.basename(input_path)[:-4] + "_log.log"
+            log_path = os.path.dirname(input_path) + "/" + os.path.basename(input_path)[:-4] + "_W{}_G{}_log.log".format(window_size, gap_size * window_size)
     # making log file
     if merge_log:
         logging.basicConfig(filename=log_path, level=logging.DEBUG,

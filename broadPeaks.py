@@ -63,9 +63,9 @@ bam_path = "/home/dima/BAMfiles/Bernstein_H1_hESC_CTCF.bam"
 args = parser.parse_args(['/media/user/DISK1/SICER_project/BAM_files/H3K4Me3_test.bam', '-g', '2'])
 
 bam_path = arguments.check_input(args.infile)
-arguments.make_log(bam_path, args.log_dir, args.log_name, args.merge_log, args.stop_verbosity)
 WINDOW_SIZE = args.window_size
 GAP = args.gap
+arguments.make_log(bam_path, args.log_dir, args.log_name, args.merge_log, args.stop_verbosity, WINDOW_SIZE, GAP)
 EFFECTIVE_PROPORTION = arguments.check_effective_proportion(args.e)
 ISLAND_SCORE_THRESHOLD = args.threshold
 outfile = arguments.check_outfile(args.outdir, args.output_name, bam_path, WINDOW_SIZE, GAP)
