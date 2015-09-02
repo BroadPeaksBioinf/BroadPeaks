@@ -81,6 +81,7 @@ p0 = 0.1
 # main_functions
 arguments.write_run_information(bam_path, WINDOW_SIZE, GAP, ISLAND_SCORE_THRESHOLD, EFFECTIVE_PROPORTION,
                                 control_path, outfile)
+
 if not control_path:
     island_list = broadpeaks_wo_control.broadpeaks_wo_control(bam_path, WINDOW_SIZE, GAP,
                                                               EFFECTIVE_PROPORTION, ISLAND_SCORE_THRESHOLD, p0)

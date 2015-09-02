@@ -20,12 +20,13 @@ def calculate_and_append_score_for_fdr(island_list_treatment, window_list_contro
 
         lambda_coeff = window_size / island_length * float(normalization)
         island_lambda = island_reads_count * lambda_coeff
-
+        # print('for 1')
         for i in range(len(window_list_control_dict[current_chr]) - windows_per_island):
             window_list = window_list_control_dict[current_chr]
             # first window in island
             first_window = window_list[i][0]
             last_window = window_list[i+windows_per_island][0]
+            # print(last_window)
 
             if island_start > first_window:
                 continue
@@ -37,11 +38,11 @@ def calculate_and_append_score_for_fdr(island_list_treatment, window_list_contro
                     number_of_reads_per_window = window_list[i+j][1]
                     control_reads_count += number_of_reads_per_window
                     j += 1
+                    # print(j)
                 control_lambda = control_reads_count * lambda_coeff
                 lambdaa = max(control_lambda, lambdaa)
                 break
             break
-
         p = scipy.stats.poisson.pmf(island_lambda, lambdaa)
         if p < 1e-320:
             score_for_fdr = 1000

@@ -22,6 +22,7 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
         current_chromosome_name = chromosome[0]
         window_list_dict[current_chromosome_name] = []
         add_window = window_list_dict[current_chromosome_name].append
+        pop_window = window_list_dict[current_chromosome_name].pop
         current_chromosome_size = int(chromosome[1])
         # print([current_chromosome_name, current_chromosome_size, len(window_list)])
         all_reads_in_chromosome = bamfile.fetch(current_chromosome_name)
@@ -70,6 +71,7 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
                             gap_flag = True
                             while gap_count > 0:
                                 window_list.pop()
+                                pop_window()
                                 gap_count -= 1
                                 chr_window -= 1
                         window_start += window_size
