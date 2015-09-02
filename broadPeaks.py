@@ -29,7 +29,7 @@ parser.add_argument('-g', dest='gap', help="Gap size shows how many windows coul
 parser.add_argument('-t', dest='threshold', help="Island score threshold. DEFAULT: 0", type=int, default=0)
 parser.add_argument('-o', dest='outdir', help="Path to directory for output `*_peaks.bed` file. "
                                               "DEFAULT: output will be in the same directory as `input.bam`",
-                    type=str)
+                    type=str, default="")
 parser.add_argument('-n', dest="output_name", help="Specify output name. "
                                                    "DEFAULT : an input file name + "
                                                    "`W<window size (bp)>_G<gap size (bp)>_peaks.bed`", type=str)
@@ -40,7 +40,7 @@ parser.add_argument('-c', dest='control', help="Path to `control.bam` file. DEFA
 parser.add_argument('-log_name', help="Specify LOG file name."
                                        "DEFAULT : `input_log.log`", type=str, default="")
 parser.add_argument('-log_dir', help="Specify path to directory where to write LOG file."
-                                       "DEFAULT : log file will be in the same directory as `input.bam`",
+                                       "DEFAULT : log file will be in the same directory as output",
                     type=str, default="")
 parser.add_argument('--merge_log', help="Merge logs from all runs in one LOG file. "
                                   "DEFAULT : LOG file contains information only from the last run", action='store_true')
@@ -60,12 +60,16 @@ bam_path = "/home/dima/BAMfiles/Bernstein_H1_hESC_CTCF.bam"
 # args as list of strings
 # args = parser.parse_args(['/media/user/DISK1/SICER_project/Inputs_mouse/GSM1288312.bam'])
 # ["/home/user/SICERproj/BAMfiles/H3K4Me3_test.bam"
-args = parser.parse_args()
+args = parser.parse_args(['/media/user/DISK1/SICER_project/BAM_files/H3K4Me3_test.bam', '-n', 'with_control_and_FDR', '-c', '/media/user/DISK1/SICER_project/BAM_files/test_control.bam', '-o', '/media/user/DISK1/SICER_project/BAM_files/our_control'])
+# args = parser.parse_args(['/media/user/DISK1/SICER_project/BAM_files/H3K4Me3_test.bam','-o', '/media/user/DISK1/SICER_project/BAM_files/our_control', '-n', 'solo_H3K4Me3_test', '-log_name', 'solo_H3K4Me3_test'])
 
 bam_path = arguments.check_input(args.infile)
 WINDOW_SIZE = args.window_size
 GAP = args.gap
-arguments.make_log(bam_path, args.log_dir, args.log_name, args.merge_log, args.stop_verbosity, WINDOW_SIZE, GAP)
+if args.outdir:
+    arguments.make_log(bam_path, args.outdir, args.log_name, args.merge_log, args.stop_verbosity, WINDOW_SIZE, GAP)
+else:
+    arguments.make_log(bam_path, args.log_dir, args.log_name, args.merge_log, args.stop_verbosity, WINDOW_SIZE, GAP)
 EFFECTIVE_PROPORTION = arguments.check_effective_proportion(args.e)
 ISLAND_SCORE_THRESHOLD = args.threshold
 outfile = arguments.check_outfile(args.outdir, args.output_name, bam_path, WINDOW_SIZE, GAP)

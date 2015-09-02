@@ -14,11 +14,14 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
     logging.info("Making eligible windows of {} bp with allowed gap_size {} bp".format(window_size, window_size*gap))
     bamfile = pysam.AlignmentFile(bam_path, 'rb')
     window_list = []
+    window_list_dict = {}
     # logging.info("chromosome_name, chromosome_size, total_number_of_eligible_windows_on_chromosome")
     for chromosome in chromosomes_info:
         beginning_of_the_previous_read = 0
         previous_read_strand = 0
         current_chromosome_name = chromosome[0]
+        window_list_dict[current_chromosome_name] = []
+        add_window = window_list_dict[current_chromosome_name].append
         current_chromosome_size = int(chromosome[1])
         # print([current_chromosome_name, current_chromosome_size, len(window_list)])
         all_reads_in_chromosome = bamfile.fetch(current_chromosome_name)
@@ -59,6 +62,7 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
 
                         # NEED TO CHANGE LAMBDA AND N
                         window_list.append([window_start, window_reads_count])
+                        add_window([window_start, window_reads_count])
                         chr_window += 1
                         # / (unique_reads_count/1000000)])
                         # If we have a g+1 sized GAP, go and delete last g windows
@@ -78,7 +82,7 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
     logging.info("\nThere are {} candidate windows".format(len(window_list) - i))
     window_list.append([1, 1])
     bamfile.close()
-    return window_list
+    return (window_list, window_list_dict)
 
 
 

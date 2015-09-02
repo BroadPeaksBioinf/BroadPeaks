@@ -13,7 +13,7 @@ import arguments
 import pre_counting
 import islands
 import output
-
+import FDR_calculation
 
 def broadpeaks_with_control(bam_path, control_path, window_size, gap, EFFECTIVE_PROPORTION, ISLAND_SCORE_THRESHOLD, p0):
 
@@ -21,7 +21,9 @@ def broadpeaks_with_control(bam_path, control_path, window_size, gap, EFFECTIVE_
     control_chromosomes_info = pre_counting.get_chromosomes_info(control_path)
 
     logging.info("\nStep 1 of 4\nCOUNTING UNIQUE READS\n")
+    logging.info("\nFor input file\n")
     input_unique_reads_count = pre_counting.count_unique_reads(bam_path, chromosomes_info)
+    logging.info("\nFor control file\n")
     control_unique_reads_count = pre_counting.count_unique_reads(control_path, control_chromosomes_info)
 
     # Effective genome length (L)
@@ -38,21 +40,42 @@ def broadpeaks_with_control(bam_path, control_path, window_size, gap, EFFECTIVE_
 
 
     logging.info("\nStep 2 of 4\nMAKING WINDOW LIST\n")
-    NORMALIZATION_CONSTANT = float(input_unique_reads_count)/float(control_unique_reads_count)
-    window_list_input = islands.make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, input_unique_reads_count, NORMALIZATION_CONSTANT)
-    window_list_control = islands.make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, control_unique_reads_count, NORMALIZATION_CONSTANT)
+    # normalization to smaller dataset
+    if input_unique_reads_count >= control_unique_reads_count:
+        NORMALIZATION_CONSTANT = float(input_unique_reads_count)/float(control_unique_reads_count)
+    else:
+        NORMALIZATION_CONSTANT = float(control_unique_reads_count)/float(input_unique_reads_count)
+    logging.info("\nFor input file\n")
+    (window_list_input, window_list_input_dict) = islands.make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, input_unique_reads_count, NORMALIZATION_CONSTANT)
+    logging.info("\nFor control file\n")
+    (window_list_control, window_list_control_dict) = islands.make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, control_unique_reads_count, NORMALIZATION_CONSTANT)
 
     #window_list = islands.modify_window_list_based_on_control(control_path, chromosomes_info, l0, window_size, gap, input_unique_reads_count, control_unique_reads_count, window_list_temp)
 
 
     logging.info("\nStep 3 of 4\nMAKING ISLAND LIST\n")
+
+    logging.info("\nFor input file\n")
     island_list_input = islands.make_islands_list(window_list_input, lambdaa, window_size, l0, chromosomes_info, ISLAND_SCORE_THRESHOLD)
+    logging.info("\nFor control file\n")
     island_list_control = islands.make_islands_list(window_list_control, lambdaa, window_size, l0, chromosomes_info, ISLAND_SCORE_THRESHOLD)
+
+    """
+    # with switching tracks
+    calculate_fdr(island_list_input, window_list_control)
+    calculate_fdr(island_list_control, window_list_input)
+
 
     island_list = islands.find_unintersected_islands(island_list_input,island_list_control)
 
     # calculate FDR
     FDR = (len(island_list_control) - (len(island_list_input)-len(island_list)))/len(island_list)
     logging.info("\nFDR is {} reads, \n".format(FDR))
+    """
+    # appending FDR to island_list_input
+    FDR_calculation.calculate_and_append_score_for_fdr(island_list_input, window_list_control_dict, lambdaa, window_size, NORMALIZATION_CONSTANT)
+    FDR_calculation.calculate_and_append_score_for_fdr(island_list_control, window_list_input_dict, lambdaa, window_size, NORMALIZATION_CONSTANT)
 
-    return(island_list)
+    FDR_calculation.calculate_and_append_fdr(island_list_input, island_list_control)
+
+    return island_list_input
