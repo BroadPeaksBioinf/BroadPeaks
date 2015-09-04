@@ -83,21 +83,27 @@ def calculate_and_append_fdr(island_list_treatment, island_list_control):
     treatment_scores = treatment_scores_dict.keys()
     treatment_scores.sort(reverse=True)
 
+    """
+    for island in island_list_treatment:
+        island.append("NA")
+    """
     control_scores = []
     for island in island_list_control:
         score_for_fdr = island[7]
         control_scores.append(score_for_fdr)
     control_scores.sort(reverse=True)
+    # just to avoid IndexError appending too big score at the end
+    control_scores.append(10000)
 
     negative_islands = 0
     true_islands = 0
 
     for t_score in treatment_scores:
-        true_islands += 1
-        while t_score <= control_scores[negative_islands]:
+        true_islands += len(treatment_scores_dict[t_score])
+        while t_score <= control_scores[negative_islands] and negative_islands < len(control_scores) - 1:
             negative_islands += 1
 
         fdr = 100.0 * negative_islands / true_islands
 
         for position in treatment_scores_dict[t_score]:
-            island_list_treatment[position].append(fdr)
+            island_list_treatment[position][8] = fdr

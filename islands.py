@@ -87,7 +87,7 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
     return (window_list, window_list_dict)
 
 
-
+"""
 # unused function for the other method of accounting for control
 def modify_window_list_based_on_control(control_path, chromosomes_info, l0, window_size, gap, unique_reads_count, control_unique_reads_count, window_list_wo_control):
     logging.info("Making window list based on control")
@@ -150,7 +150,7 @@ def modify_window_list_based_on_control(control_path, chromosomes_info, l0, wind
                 gap_count -= 1
 
     return window_list_new
-
+"""
 
 
 
@@ -217,7 +217,7 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
             else:
                 # Set score
                 window_score = calculate_window_score(number_of_reads, lambdaa, l0)
-                if number_of_reads<l0:
+                if number_of_reads < l0:
                     island_number_of_gaps += 1
                 island_score += window_score
                 island_number_of_reads += number_of_reads
@@ -227,7 +227,7 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
     return islands_list
 
 
-
+"""
 # diff function returns difference between two island lists, ie islands that are in the first list but not in the second.
 # both lists are assumed to be sorted by chromosome and by island_start
 def diff(island_list, island_list_2):
@@ -327,3 +327,4 @@ def find_unintersected_islands(island_list, island_list_2):
     final_islands = diff(island_list,intersection_islands)
 
     return (final_islands)
+"""

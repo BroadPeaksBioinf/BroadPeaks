@@ -42,17 +42,13 @@ def broadpeaks_with_control(bam_path, control_path, window_size, gap, EFFECTIVE_
 
 
     logging.info("\nStep 2 of 4\nMAKING WINDOW LIST\n")
-    # normalization to smaler dataset
-    if input_unique_reads_count >= control_unique_reads_count:
-        NORMALIZATION_CONSTANT = float(control_unique_reads_count) / input_unique_reads_count
-        logging.info("\nFor input file\n")
-        (window_list_input, window_list_input_dict) = islands.make_windows_list(bam_path, chromosomes_info, input_l0, window_size, gap, input_unique_reads_count, NORMALIZATION_CONSTANT)
-        logging.info("\nFor control file\n")
-        (window_list_control, window_list_control_dict) = islands.make_windows_list(control_path, chromosomes_info, control_l0, window_size, gap, control_unique_reads_count, 1)
-    else:
-        NORMALIZATION_CONSTANT = float(input_unique_reads_count) / control_unique_reads_count
-        (window_list_input, window_list_input_dict) = islands.make_windows_list(bam_path, chromosomes_info, input_l0, window_size, gap, input_unique_reads_count, 1)
-        (window_list_control, window_list_control_dict) = islands.make_windows_list(control_path, chromosomes_info, control_l0, window_size, gap, control_unique_reads_count, NORMALIZATION_CONSTANT)
+
+    # for two libraries are independent, we do not scale them here
+    NORMALIZATION_CONSTANT = 1
+    logging.info("\nFor input file\n")
+    (window_list_input, window_list_input_dict) = islands.make_windows_list(bam_path, chromosomes_info, input_l0, window_size, gap, input_unique_reads_count, NORMALIZATION_CONSTANT)
+    logging.info("\nFor control file\n")
+    (window_list_control, window_list_control_dict) = islands.make_windows_list(control_path, chromosomes_info, control_l0, window_size, gap, control_unique_reads_count, NORMALIZATION_CONSTANT)
 
     #window_list = islands.modify_window_list_based_on_control(control_path, chromosomes_info, l0, window_size, gap, input_unique_reads_count, control_unique_reads_count, window_list_temp)
 
@@ -76,14 +72,17 @@ def broadpeaks_with_control(bam_path, control_path, window_size, gap, EFFECTIVE_
     FDR = (len(island_list_control) - (len(island_list_input)-len(island_list)))/len(island_list)
     logging.info("\nFDR is {} reads, \n".format(FDR))
     """
-    # appending FDR to island_list_input for input > control
+    # appending FDR to island_list_input
+    # normalization to smaller dataset
     if input_unique_reads_count >= control_unique_reads_count:
+        NORMALIZATION_CONSTANT = float(control_unique_reads_count) / input_unique_reads_count
         FDR_calculation.calculate_and_append_score_for_fdr(island_list_input, window_list_control_dict, input_lambda, window_size, NORMALIZATION_CONSTANT)
         FDR_calculation.calculate_and_append_score_for_fdr(island_list_control, window_list_input_dict, control_lambda, window_size, 1)
     else:
+        NORMALIZATION_CONSTANT = float(input_unique_reads_count) / control_unique_reads_count
         FDR_calculation.calculate_and_append_score_for_fdr(island_list_input, window_list_control_dict, input_lambda, window_size, 1)
         FDR_calculation.calculate_and_append_score_for_fdr(island_list_control, window_list_input_dict, control_lambda, window_size, NORMALIZATION_CONSTANT)
 
-    FDR_calculation.calculate_and_append_fdr(island_list_input, island_list_control)
+    # FDR_calculation.calculate_and_append_fdr(island_list_input, island_list_control)
 
     return island_list_input
