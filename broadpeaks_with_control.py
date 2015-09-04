@@ -83,6 +83,6 @@ def broadpeaks_with_control(bam_path, control_path, window_size, gap, EFFECTIVE_
         FDR_calculation.calculate_and_append_score_for_fdr(island_list_input, window_list_control_dict, input_lambda, window_size, 1)
         FDR_calculation.calculate_and_append_score_for_fdr(island_list_control, window_list_input_dict, control_lambda, window_size, NORMALIZATION_CONSTANT)
 
-    # FDR_calculation.calculate_and_append_fdr(island_list_input, island_list_control)
+    FDR_calculation.calculate_and_append_fdr(island_list_input, island_list_control)
 
     return island_list_input

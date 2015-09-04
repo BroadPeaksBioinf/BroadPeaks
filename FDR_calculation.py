@@ -83,10 +83,10 @@ def calculate_and_append_fdr(island_list_treatment, island_list_control):
     treatment_scores = treatment_scores_dict.keys()
     treatment_scores.sort(reverse=True)
 
-    """
+
     for island in island_list_treatment:
         island.append("NA")
-    """
+
     control_scores = []
     for island in island_list_control:
         score_for_fdr = island[7]
