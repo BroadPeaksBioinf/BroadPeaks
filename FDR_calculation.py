@@ -92,8 +92,6 @@ def calculate_and_append_fdr(island_list_treatment, island_list_control):
         score_for_fdr = island[7]
         control_scores.append(score_for_fdr)
     control_scores.sort(reverse=True)
-    # just to avoid IndexError appending too big score at the end
-    control_scores.append(10000)
 
     negative_islands = 0
     true_islands = 0
