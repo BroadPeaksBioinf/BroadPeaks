@@ -33,6 +33,7 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
         chr_window = 0
         i = 0
         for read in all_reads_in_chromosome:
+            # print((list(all_reads_in_chromosome)))
             read_str = str(read)
             # read strand: 0 = +         16 = -
             read_strand = ([int(s) for s in read_str.split() if s.isdigit()][0])
@@ -45,8 +46,10 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
                 gap_flag = True
                 while True:
                     # if read in window
-                    if window_start <= beginning_of_the_read and beginning_of_the_read < window_start + window_size:
+                    #print(window_start)
+                    if window_start <= beginning_of_the_read < window_start + window_size:
                         window_reads_count += 1
+                         # print(window_reads_count)
                         break
                     # if read before window: NEVER ENTERING THIS CONDITION
                     elif beginning_of_the_read < window_start:
@@ -67,6 +70,8 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
                         chr_window += 1
                         # / (unique_reads_count/1000000)])
                         # If we have a g+1 sized GAP, go and delete last g windows
+                        #print(window_list)
+                        # print(window_list_dict)
                         if gap_count > gap or gap_flag:
                             gap_flag = True
                             while gap_count > 0:
@@ -76,6 +81,10 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
                                 chr_window -= 1
                         window_start += window_size
                         window_reads_count = 0
+        # appends island if this is the last window
+        if window_reads_count != 0:
+            window_list.append([window_start, window_reads_count])
+            add_window([window_start, window_reads_count])
         # Next chromosome marker just in case
         window_list.append([-1, -1])
         i += 1
@@ -84,6 +93,8 @@ def make_windows_list(bam_path, chromosomes_info, l0, window_size, gap, unique_r
     logging.info("\nThere are {} candidate windows".format(len(window_list) - i))
     window_list.append([1, 1])
     bamfile.close()
+    # print(window_list)
+    print(window_list_dict)
     return (window_list, window_list_dict)
 
 
@@ -176,7 +187,7 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
     island_number_of_gaps = 0
     window_start = window_list[0][0] - window_size
     island_start = window_list[0][0]
-    zero_score_islands = 0
+    #zero_score_islands = 0
     for i, window in enumerate(window_list):
         # i == # in list, window == [window_start_position, number_of_reads_per_window]
         window_start_new = window[0]
@@ -186,20 +197,25 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
         # New chromosome check: [-1  -1] window separates chomosomes.
         if window_start_new == -1:
             # append the previous island
-            islands_list.append([current_chromosome_name, island_start,
-                                    window_start + window_size, island_score, island_number_of_reads, island_length - island_number_of_gaps, island_number_of_gaps])
+            island_number_of_reads += window_list[i-1][1]
+            island_score += calculate_window_score(window_list[i-1][1], lambdaa, l0)
+            islands_list.append([current_chromosome_name, island_start, window_start + window_size, island_score,
+                                 island_number_of_reads, island_length - island_number_of_gaps, island_number_of_gaps])
 
             # reset parameters for the new island
-            window_start = window_list[i + 1][0] - window_size
-            island_start = window_list[i + 1][0] - window_size
-            island_score = 0
-            island_number_of_reads = 0
-            island_number_of_gaps = 0
-
             chromosome_counter += 1
             # switch the chromosome name to next one
             if chromosome_counter < len(chromosomes_info):
                 current_chromosome_name = chromosomes_info[chromosome_counter][0]
+                window_start = window_list[i + 1][0] - window_size
+                island_start = window_list[i + 1][0] - window_size
+                island_score = 0
+                island_number_of_reads = 0
+                island_number_of_gaps = 0
+            # if all chromosomes were observed
+            elif chromosome_counter == len(chromosomes_info):
+                break
+
         else:
             # if the next window belongs to the next island:
             if window_start_new != window_start + window_size:
@@ -222,8 +238,11 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
                 island_score += window_score
                 island_number_of_reads += number_of_reads
             window_start = window_start_new
+    # islands_list.append([current_chromosome_name, island_start, window_start + window_size, island_score,
+                         #island_number_of_reads, island_length - island_number_of_gaps, island_number_of_gaps])
     logging.info("There are {} islands found".format(len(islands_list)))
-    print(zero_score_islands)
+    #print(zero_score_islands)
+    print(islands_list)
     return islands_list
 
 

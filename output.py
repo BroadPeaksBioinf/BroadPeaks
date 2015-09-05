@@ -6,7 +6,7 @@ def write_output(outfile, island_list, island_score_threshold):
     f = open(outfile, 'wb')
     logging.info("Line in BED file: "
                  "'chromosome_name\tisland_start\tisland_end\tisland_score\tnumber_of_reads_in_the_island\t"
-                 "island_number_of_eligible_windows\tnumber_of_gaps_in_the_island\tscore_for_fdr\tfdr'")
+                 "number_of_eligible_windows_per_island\tnumber_of_gaps_in_the_island\tscore_for_fdr\tfdr'")
     for island in island_list:
         if island[3] >= island_score_threshold:
             island_string = '\t'.join([str(_) for _ in island]) + '\n'
