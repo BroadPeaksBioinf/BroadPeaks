@@ -5,7 +5,7 @@ import time
 import argparse
 
 """
-# if python install --home=~
+# if python setup.py install --home=~
 import sys
 sys.path.append('/home/<username>/lib/python/BroadPeaks1/')
 """
