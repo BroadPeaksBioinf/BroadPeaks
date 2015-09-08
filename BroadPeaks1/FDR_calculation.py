@@ -15,7 +15,6 @@ island = [current_chromosome_name, island_start, window_start + window_size, isl
 
 def calculate_and_append_score_for_fdr(island_list_treatment, window_list_control_dict, lambdaa_treatment, window_size, normalization_4_treatment, normalization_4_control):
 
-
     for island in island_list_treatment:
         island.append("NA")
 
