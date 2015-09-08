@@ -30,6 +30,7 @@ def calculate_and_append_score_for_fdr(island_list_treatment, window_list_contro
         windows_per_island = island_length / window_size
 
         island_lambda = island_reads_count * normalization_4_treatment
+        lambdaa_treatment = lambdaa_treatment * windows_per_island * normalization_4_treatment
         # print('for 1')
         if current_chr != previous_chr:
             i = 0
