@@ -199,6 +199,9 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
             # append the previous island
             island_number_of_reads += window_list[i-1][1]
             island_score += calculate_window_score(window_list[i-1][1], lambdaa, l0)
+            # sometimes -200 appeared
+            if island_start < 0:
+                island_start = 0
             islands_list.append([current_chromosome_name, island_start, window_start + window_size, island_score,
                                  island_number_of_reads, island_length - island_number_of_gaps, island_number_of_gaps])
 
@@ -224,6 +227,8 @@ def make_islands_list(window_list, lambdaa, window_size, l0, chromosomes_info, i
                     island_score = calculate_window_score(number_of_reads, lambdaa, l0)
                     island_number_of_reads = number_of_reads
                 island_length = (window_start + window_size - island_start)/window_size
+                if island_start < 0:
+                    island_start = 0
                 islands_list.append([current_chromosome_name, island_start,
                                     window_start + window_size, island_score, island_number_of_reads, island_length - island_number_of_gaps, island_number_of_gaps])
                 island_score = 0
