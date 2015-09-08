@@ -70,12 +70,12 @@ def broadpeaks_with_control(bam_path, control_path, window_size, gap, EFFECTIVE_
     # normalization to smaller dataset
     if input_unique_reads_count >= control_unique_reads_count:
         NORMALIZATION_CONSTANT = float(control_unique_reads_count) / input_unique_reads_count
-        FDR_calculation.calculate_and_append_score_for_fdr(island_list_input, window_list_control_dict, input_lambda, window_size, NORMALIZATION_CONSTANT)
-        FDR_calculation.calculate_and_append_score_for_fdr(island_list_control, window_list_input_dict, control_lambda, window_size, 1)
+        FDR_calculation.calculate_and_append_score_for_fdr(island_list_input, window_list_control_dict, input_lambda, window_size, NORMALIZATION_CONSTANT, 1)
+        FDR_calculation.calculate_and_append_score_for_fdr(island_list_control, window_list_input_dict, control_lambda, window_size, 1, NORMALIZATION_CONSTANT)
     else:
         NORMALIZATION_CONSTANT = float(input_unique_reads_count) / control_unique_reads_count
-        FDR_calculation.calculate_and_append_score_for_fdr(island_list_input, window_list_control_dict, input_lambda, window_size, 1)
-        FDR_calculation.calculate_and_append_score_for_fdr(island_list_control, window_list_input_dict, control_lambda, window_size, NORMALIZATION_CONSTANT)
+        FDR_calculation.calculate_and_append_score_for_fdr(island_list_input, window_list_control_dict, input_lambda, window_size, 1, NORMALIZATION_CONSTANT)
+        FDR_calculation.calculate_and_append_score_for_fdr(island_list_control, window_list_input_dict, control_lambda, window_size, NORMALIZATION_CONSTANT, 1)
 
     FDR_calculation.calculate_and_append_fdr(island_list_input, island_list_control)
 
