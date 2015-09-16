@@ -16,15 +16,20 @@ def broadpeaks_with_control(bam_path, control_path, window_size, gap, EFFECTIVE_
 
     logging.info("\nStep 1 of 4\nCOUNTING UNIQUE READS\n")
     logging.info("\nFor input file\n")
+    # input_unique_reads_count = 6300518
     input_unique_reads_count = pre_counting.count_unique_reads(bam_path, chromosomes_info)
     logging.info("\nFor control file\n")
+    # control_unique_reads_count = 3758349
     control_unique_reads_count = pre_counting.count_unique_reads(control_path, control_chromosomes_info)
 
     # Effective genome length (L)
+    # effective_length = 2383684366.91
     effective_length = pre_counting.count_effective_length(EFFECTIVE_PROPORTION, chromosomes_info)
 
     # Lambda for poisson distribution
+    # input_lambda = 0.53
     input_lambda = pre_counting.count_lambda(input_unique_reads_count, window_size, effective_length)
+    # control_lambda = 0.32
     control_lambda = pre_counting.count_lambda(control_unique_reads_count, window_size, effective_length)
 
     # Minimum #reads in a window for eligibility
@@ -77,6 +82,7 @@ def broadpeaks_with_control(bam_path, control_path, window_size, gap, EFFECTIVE_
         FDR_calculation.calculate_and_append_score_for_fdr(island_list_input, window_list_control_dict, input_lambda, window_size, 1, NORMALIZATION_CONSTANT)
         FDR_calculation.calculate_and_append_score_for_fdr(island_list_control, window_list_input_dict, control_lambda, window_size, NORMALIZATION_CONSTANT, 1)
 
-    FDR_calculation.calculate_and_append_fdr(island_list_input, island_list_control)
+    FDR_calculation.calculate_and_append_fdr(island_list_input, island_list_control, 7)
+    FDR_calculation.calculate_and_append_fdr(island_list_input, island_list_control, 8)
 
     return island_list_input
